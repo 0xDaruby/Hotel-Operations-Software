@@ -1,7 +1,9 @@
-import { PageFoundation } from '@/components/page-foundation';
 import { requireStaffProfile } from '@/features/auth/staff-profile';
+import { getInventory } from '@/features/inventory/inventory';
+import { RoomBoard } from '@/features/inventory/room-board';
 
 export default async function RoomsPage() {
   await requireStaffProfile(['owner', 'receptionist', 'supervisor']);
-  return <PageFoundation title="Room board structure is ready" description="The authenticated shell is prepared for the production room inventory and derived readiness model." />;
+  const inventory = await getInventory();
+  return <RoomBoard {...inventory} />;
 }
