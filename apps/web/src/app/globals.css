@@ -1,0 +1,12 @@
+:root {
+  --sage: #98a086;
+  --rose: #a76d5e;
+  --tan: #c4a071;
+  --beige: #dfccb1;
+  --brown: #846044;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { font-family: Arial, sans-serif; }
+body { margin: 0; }

@@ -1,0 +1,47 @@
+# Dependencies and generated build output
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+generated/prisma/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and local runtime data
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Approved prototype sources and local verification artifacts
+/02-xyz-hotel-earth-palette.html
+/03-hotel-operations.html
+/operations-shell.html
+/operations-app.js
+/PROTOTYPE.md
+/prototype/
+/build-prototype.cjs
+/preview-server.cjs
+/refine-prototype.cjs
+/verify-prototype.cjs
+/prototype-verification.json
+
+# Prototype screenshots and other local image exports
+*.png
+
+# Local project memory and personal working files
+/MEMORY.md
+*.local.*
+*.private.*
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

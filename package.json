@@ -1,0 +1,27 @@
+{
+  "name": "hotel-operations",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n WEB,API,WORKER -c cyan,green,yellow \"pnpm --dir apps/web dev\" \"pnpm --dir apps/api start:dev\" \"pnpm --dir apps/worker start:dev\"",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "devDependencies": {
+    "concurrently": "latest",
+    "dotenv": "latest",
+    "prettier": "latest",
+    "prisma": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

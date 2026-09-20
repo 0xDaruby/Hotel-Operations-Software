@@ -1,0 +1,9 @@
+{
+  "name": "@hotel-operations/domain",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Pure hotel business rules and state transitions.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}

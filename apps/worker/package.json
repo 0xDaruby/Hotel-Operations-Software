@@ -1,0 +1,27 @@
+{
+  "name": "@hotel-operations/worker",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hotel-operations/contracts": "workspace:*",
+    "@hotel-operations/domain": "workspace:*",
+    "@nestjs/common": "latest",
+    "@nestjs/core": "latest",
+    "@nestjs/platform-express": "latest",
+    "reflect-metadata": "latest",
+    "rxjs": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "latest",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}
