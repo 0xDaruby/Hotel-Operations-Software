@@ -224,9 +224,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@cloudflare/workers-response-store':
-        specifier: 0.1.0-beta.0
-        version: 0.1.0-beta.0
       '@hotel-operations/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
