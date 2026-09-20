@@ -7,25 +7,40 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:vinext": "vinext dev --port 3001",
+    "build:vinext": "vinext build",
+    "start:vinext": "wrangler dev --config dist/server/wrangler.json",
+    "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json --experimental-warm-cdn-cache",
+    "deploy:response-store": "wrangler deploy --config wrangler.response-store.jsonc"
   },
   "dependencies": {
+    "@cloudflare/workers-response-store": "0.1.0-beta.0",
     "@hotel-operations/contracts": "workspace:*",
     "@hotel-operations/domain": "workspace:*",
     "@hotel-operations/ui": "workspace:*",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
+    "@vinext/cloudflare": "1.0.0-beta.8",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-server-dom-webpack": "^19.3.0",
+    "vinext": "1.0.0-beta.10",
     "zod": "latest"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.56.0",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-rsc": "^0.5.35",
     "eslint": "9.39.2",
     "eslint-config-next": "latest",
-    "typescript": "6.0.3"
-  }
+    "typescript": "6.0.3",
+    "vite": "^8.3.0",
+    "wrangler": "^4.135.0"
+  },
+  "type": "module"
 }
