@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "web",
+  "name": "hotel-operations-software",
   "compatibility_date": "2026-09-20",
   "compatibility_flags": [
     "nodejs_compat"
@@ -16,15 +16,5 @@
   },
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
-  },
-  "cache": {
-    "enabled": false
-  },
-  "services": [
-    {
-      "binding": "RESPONSE_STORE",
-      "service": "web-response-store",
-      "entrypoint": "ResponseStoreService"
-    }
-  ]
+  }
 }
