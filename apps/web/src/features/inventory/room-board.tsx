@@ -6,6 +6,8 @@ import type { HotelRoom, RoomCategory } from './inventory';
 type RoomBoardProps = {
   rooms: HotelRoom[];
   categories: RoomCategory[];
+  occupiedRoomIds: string[];
+  blockedRoomIds: string[];
 };
 
 function formatNaira(amount: number | null) {
@@ -14,7 +16,9 @@ function formatNaira(amount: number | null) {
     : `₦${amount.toLocaleString('en-NG')} / 24 hours`;
 }
 
-export function RoomBoard({ rooms, categories }: RoomBoardProps) {
+export function RoomBoard({ rooms, categories, occupiedRoomIds, blockedRoomIds }: RoomBoardProps) {
+  const occupied = new Set(occupiedRoomIds);
+  const blocked = new Set(blockedRoomIds);
   const [categoryId, setCategoryId] = useState('all');
   const [floor, setFloor] = useState('all');
   const [query, setQuery] = useState('');
@@ -77,10 +81,15 @@ export function RoomBoard({ rooms, categories }: RoomBoardProps) {
               </div>
               <div className="room-badges">
                 <span className={room.active ? 'status-badge status-neutral' : 'status-badge status-muted'}>{room.active ? 'Active inventory' : 'Inactive inventory'}</span>
-                <span className="status-badge status-pending">Operational status pending</span>
+                {occupied.has(room.id) ? (
+                  <span className="status-badge status-occupied">Occupied</span>
+                ) : blocked.has(room.id) ? (
+                  <span className="status-badge status-pending">Inspection due</span>
+                ) : (
+                  <span className="status-badge status-ready">Ready</span>
+                )}
               </div>
               <p className="room-rate">{formatNaira(room.dailyRate)}</p>
-              <p className="room-card-note">This card will gain live occupancy, inspection, and maintenance facts in later milestones.</p>
             </article>
           ))}
         </div>
