@@ -7,7 +7,8 @@ type RoomBoardProps = {
   rooms: HotelRoom[];
   categories: RoomCategory[];
   occupiedRoomIds: string[];
-  blockedRoomIds: string[];
+  inspectionDueRoomIds: string[];
+  maintenanceIssueCountByRoomId: Record<string, number>;
 };
 
 function formatNaira(amount: number | null) {
@@ -16,9 +17,15 @@ function formatNaira(amount: number | null) {
     : `₦${amount.toLocaleString('en-NG')} / 24 hours`;
 }
 
-export function RoomBoard({ rooms, categories, occupiedRoomIds, blockedRoomIds }: RoomBoardProps) {
+export function RoomBoard({
+  rooms,
+  categories,
+  occupiedRoomIds,
+  inspectionDueRoomIds,
+  maintenanceIssueCountByRoomId,
+}: RoomBoardProps) {
   const occupied = new Set(occupiedRoomIds);
-  const blocked = new Set(blockedRoomIds);
+  const inspectionDue = new Set(inspectionDueRoomIds);
   const [categoryId, setCategoryId] = useState('all');
   const [floor, setFloor] = useState('all');
   const [query, setQuery] = useState('');
@@ -46,7 +53,7 @@ export function RoomBoard({ rooms, categories, occupiedRoomIds, blockedRoomIds }
           <p className="eyebrow">Permanent inventory</p>
           <h2 id="room-board-heading">{visibleRooms.length} of {rooms.length} rooms</h2>
         </div>
-        <p>Occupancy, inspections, maintenance, and ready-for-check-in are added when their records exist.</p>
+        <p>Occupancy, inspections, and maintenance are separate facts. A room is ready for check-in only when all three are clear.</p>
       </div>
 
       <div className="room-toolbar">
@@ -73,25 +80,38 @@ export function RoomBoard({ rooms, categories, occupiedRoomIds, blockedRoomIds }
 
       {visibleRooms.length ? (
         <div className="room-grid" aria-live="polite">
-          {visibleRooms.map((room) => (
-            <article className={room.active ? 'room-card' : 'room-card room-card-inactive'} key={room.id}>
-              <div className="room-card-head">
-                <div><p>{room.categoryName}</p><h3>{room.number}</h3></div>
-                <span>{room.floor}</span>
-              </div>
-              <div className="room-badges">
-                <span className={room.active ? 'status-badge status-neutral' : 'status-badge status-muted'}>{room.active ? 'Active inventory' : 'Inactive inventory'}</span>
-                {occupied.has(room.id) ? (
-                  <span className="status-badge status-occupied">Occupied</span>
-                ) : blocked.has(room.id) ? (
-                  <span className="status-badge status-pending">Inspection due</span>
-                ) : (
-                  <span className="status-badge status-ready">Ready</span>
-                )}
-              </div>
-              <p className="room-rate">{formatNaira(room.dailyRate)}</p>
-            </article>
-          ))}
+          {visibleRooms.map((room) => {
+            const isOccupied = occupied.has(room.id);
+            const isInspectionDue = inspectionDue.has(room.id);
+            const issueCount = maintenanceIssueCountByRoomId[room.id] ?? 0;
+            const isReady = room.active && !isOccupied && !isInspectionDue && issueCount === 0;
+
+            const blockers: string[] = [];
+            if (!room.active) blockers.push('Inactive inventory');
+            if (isOccupied) blockers.push('Occupied');
+            if (isInspectionDue) blockers.push('Inspection due');
+            if (issueCount > 0) blockers.push(`${issueCount} open maintenance issue${issueCount === 1 ? '' : 's'}`);
+
+            return (
+              <article className={room.active ? 'room-card' : 'room-card room-card-inactive'} key={room.id}>
+                <div className="room-card-head">
+                  <div><p>{room.categoryName}</p><h3>{room.number}</h3></div>
+                  <span>{room.floor}</span>
+                </div>
+                <div className="room-badges">
+                  {!room.active ? <span className="status-badge status-muted">Inactive inventory</span> : null}
+                  <span className={isOccupied ? 'status-badge status-occupied' : 'status-badge status-neutral'}>
+                    {isOccupied ? 'Occupied' : 'Unoccupied'}
+                  </span>
+                  {isInspectionDue ? <span className="status-badge status-pending">Inspection due</span> : null}
+                  {issueCount > 0 ? <span className="status-badge status-danger">Maintenance blocked</span> : null}
+                  {isReady ? <span className="status-badge status-ready">Ready for check-in</span> : null}
+                </div>
+                {!isReady ? <p className="room-reason">Not ready: {blockers.join(' · ')}</p> : null}
+                <p className="room-rate">{formatNaira(room.dailyRate)}</p>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div className="inventory-empty" role="status">

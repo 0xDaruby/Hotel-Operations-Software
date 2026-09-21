@@ -163,7 +163,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @keyframes loading-pulse { 50% { transform: translateY(-4px); opacity: .55; } }
 
 /* Milestones 3+4 — walk-in stays, departure management, payments */
-.status-occupied { color: #713d32; background: #ebd6cf; }
+.status-occupied { color: #3a472f; background: #cdd3bd; }
 .status-ready { color: #3f4d33; background: #dfe5d5; }
 .button-danger { color: var(--paper); background: var(--rose); border-color: var(--rose); }
 .button-danger:hover { background: #8a574a; }
@@ -310,3 +310,22 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Milestones 5+6 — room board maintenance and inspection status */
+.status-danger { color: #793d32; background: #ebd1c8; }
+.room-reason { margin: 0 0 10px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+.inspection-workspace { display: grid; gap: 20px; min-width: 0; }
+.inspection-list, .maintenance-list { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.inspection-card, .maintenance-card { display: grid; gap: 14px; padding: 20px; background: var(--card-bg); border: 1px solid #cdbca8; border-radius: 10px; box-shadow: 0 3px 9px #4b332204; }
+.inspection-card-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.inspection-card-head > div { min-width: 0; }
+.inspection-card-head h3 { margin: 0; font: 26px/1.1 var(--display); letter-spacing: -1px; }
+.inspection-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 0; padding: 12px 0; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); }
+.inspection-facts > div { display: grid; gap: 3px; min-width: 0; }
+.inspection-facts dt { color: var(--text-secondary); font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.inspection-facts dd { margin: 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 600; }
+.inspection-findings { padding: 12px 14px; color: var(--text-secondary); background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.maintenance-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 28px; align-items: start; }
+.maintenance-main { display: grid; gap: 20px; min-width: 0; }
+.maintenance-role-note { padding: 14px 16px; color: var(--text-secondary); background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 11px; line-height: 1.6; }
+@media (max-width: 980px) { .maintenance-layout { grid-template-columns: 1fr; } }

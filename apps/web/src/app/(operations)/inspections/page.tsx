@@ -1,7 +1,9 @@
-import { PageFoundation } from '@/components/page-foundation';
 import { requireStaffProfile } from '@/features/auth/staff-profile';
+import { InspectionWorkspace } from '@/features/inspections/inspection-workspace';
+import { getInspectionQueue } from '@/features/inspections/inspections';
 
 export default async function InspectionsPage() {
-  await requireStaffProfile(['owner', 'supervisor']);
-  return <PageFoundation title="Shared inspection queue is ready" description="Supervisor completion will be attributed to the signed-in profile without assignments or inspection claims." />;
+  const profile = await requireStaffProfile(['owner', 'supervisor']);
+  const requirements = await getInspectionQueue();
+  return <InspectionWorkspace requirements={requirements} canRecord={profile.role === 'supervisor'} />;
 }
