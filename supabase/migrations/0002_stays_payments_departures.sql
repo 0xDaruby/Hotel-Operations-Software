@@ -198,7 +198,7 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Your staff profile is unavailable or inactive.';
   END IF;
-  IF v_staff.role NOT IN ('owner', 'receptionist') THEN
+  IF v_staff.role <> 'receptionist' THEN
     RAISE EXCEPTION 'Your role cannot perform reception actions.';
   END IF;
   RETURN v_staff;

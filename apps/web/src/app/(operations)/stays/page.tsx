@@ -4,11 +4,11 @@ import { StayList } from '@/features/stays/stay-list';
 import { getActiveStays, getOperationalContext, getStayPayments, getStayTotals } from '@/features/stays/stays';
 
 export default async function StaysPage() {
-  await requireStaffProfile(['owner', 'receptionist']);
+  const profile = await requireStaffProfile(['owner', 'receptionist']);
   const [context, stays] = await Promise.all([getOperationalContext(), getActiveStays()]);
   const stayIds = stays.map((stay) => stay.id);
   const [payments, totals] = await Promise.all([getStayPayments(stayIds), getStayTotals(stayIds)]);
-  const canRecord = context.profile.role !== 'supervisor';
+  const canRecord = profile.role === 'receptionist';
 
   return (
     <div className="stays-layout">
@@ -22,11 +22,13 @@ export default async function StaysPage() {
         </div>
         <StayList stays={stays} payments={payments} totals={totals} readyRooms={context.readyRooms} canRecord={canRecord} />
       </div>
-      <aside className="stays-side">
-        <h2>Record walk-in arrival</h2>
-        <p className="stays-side-note">Rate is locked from the room category and the deadline is arrival plus 24 hours per paid day.</p>
-        <ArrivalForm readyRooms={context.readyRooms} />
-      </aside>
+      {canRecord ? (
+        <aside className="stays-side">
+          <h2>Record walk-in arrival</h2>
+          <p className="stays-side-note">Rate is locked from the room category and the deadline is arrival plus 24 hours per paid day.</p>
+          <ArrivalForm readyRooms={context.readyRooms} />
+        </aside>
+      ) : null}
     </div>
   );
 }

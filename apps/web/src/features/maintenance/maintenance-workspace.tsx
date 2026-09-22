@@ -71,7 +71,7 @@ export function MaintenanceWorkspace({ issues, rooms, canReport, canResolve }: M
         {canReport ? <ReportIssueForm rooms={rooms} /> : (
           <div className="maintenance-role-note">
             <h2>Issue reporting</h2>
-            <p>Only Supervisors can report maintenance issues. Open issues remain visible here to all staff.</p>
+            <p>Owners and Supervisors can report maintenance issues. Open issues remain visible here to all staff.</p>
           </div>
         )}
       </aside>

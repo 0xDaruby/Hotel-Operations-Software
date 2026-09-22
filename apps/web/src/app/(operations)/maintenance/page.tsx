@@ -10,7 +10,7 @@ export default async function MaintenancePage() {
     <MaintenanceWorkspace
       issues={issues}
       rooms={rooms}
-      canReport={profile.role === 'supervisor'}
+      canReport={profile.role === 'owner' || profile.role === 'supervisor'}
       canResolve={profile.role === 'owner' || profile.role === 'supervisor'}
     />
   );

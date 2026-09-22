@@ -120,9 +120,6 @@ BEGIN
 END;
 $$;
 
--- ASSUMPTION (FR-095 still open): Owner / Manager and Supervisor may each
--- resolve a maintenance issue independently. Change the role list here if the
--- decision goes another way.
 CREATE OR REPLACE FUNCTION public.assert_maintenance_resolution_role()
 RETURNS public.staff_profiles
 LANGUAGE plpgsql
@@ -142,6 +139,31 @@ BEGIN
   END IF;
   IF v_staff.role NOT IN ('owner', 'supervisor') THEN
     RAISE EXCEPTION 'Your role cannot resolve maintenance issues.';
+  END IF;
+
+  RETURN v_staff;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.assert_maintenance_report_role()
+RETURNS public.staff_profiles
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_staff public.staff_profiles;
+BEGIN
+  SELECT * INTO v_staff
+  FROM public.staff_profiles
+  WHERE user_id = auth.uid() AND active;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Your staff profile is unavailable or inactive.';
+  END IF;
+  IF v_staff.role NOT IN ('owner', 'supervisor') THEN
+    RAISE EXCEPTION 'Your role cannot report maintenance issues.';
   END IF;
 
   RETURN v_staff;
@@ -319,7 +341,7 @@ DECLARE
   v_issue_id uuid;
   v_detail text;
 BEGIN
-  v_staff := public.assert_supervisor_role();
+  v_staff := public.assert_maintenance_report_role();
 
   SELECT * INTO v_room FROM public.rooms WHERE id = p_room_id AND active;
   IF NOT FOUND THEN
@@ -444,6 +466,7 @@ REVOKE ALL ON FUNCTION public.log_activity(uuid, public.staff_profiles, text, uu
 REVOKE ALL ON FUNCTION public.assert_reception_role() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.assert_supervisor_role() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.assert_maintenance_resolution_role() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.assert_maintenance_report_role() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.room_is_ready(uuid) FROM PUBLIC, anon;
 
 -- 0002 RPCs: remove the anonymous grant; authenticated staff keep access.

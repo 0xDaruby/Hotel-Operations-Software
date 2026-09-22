@@ -148,6 +148,9 @@ async function deleteById(path, id) {
 }
 
 async function cleanup(accounts, testData) {
+  if (testData.issueId) {
+    await deleteById('/rest/v1/maintenance_issues?id=eq.', testData.issueId);
+  }
   if (testData.requirementId) {
     await deleteById('/rest/v1/inspection_requirements?id=eq.', testData.requirementId);
   }
@@ -292,10 +295,53 @@ async function audit(accounts, testData) {
       func: 'void_stay',
       params: { p_stay_id: crypto.randomUUID(), p_reason: 'role check', p_expected_version: 1 },
     },
+    {
+      name: 'owner->record_arrival',
+      token: accounts.owner.token,
+      func: 'record_arrival',
+      params: { p_room_id: readyRoom.id, p_guest_name: 'Owner role check', p_guest_phone: '08000000000', p_paid_days: 1, p_expected_amount: dailyRate },
+    },
+    {
+      name: 'owner->extend_stay',
+      token: accounts.owner.token,
+      func: 'extend_stay',
+      params: { p_stay_id: crypto.randomUUID(), p_added_days: 1, p_expected_amount: dailyRate, p_expected_version: 1 },
+    },
+    {
+      name: 'owner->confirm_departure',
+      token: accounts.owner.token,
+      func: 'confirm_departure',
+      params: { p_stay_id: crypto.randomUUID(), p_expected_version: 1 },
+    },
+    {
+      name: 'owner->move_stay',
+      token: accounts.owner.token,
+      func: 'move_stay',
+      params: { p_stay_id: crypto.randomUUID(), p_to_room_id: readyRoom.id, p_reason: 'role check', p_expected_version: 1 },
+    },
+    {
+      name: 'owner->correct_stay',
+      token: accounts.owner.token,
+      func: 'correct_stay',
+      params: { p_stay_id: crypto.randomUUID(), p_guest_name: 'Owner role check', p_guest_phone: null, p_paid_days: 1, p_reason: 'role check', p_expected_version: 1 },
+    },
+    {
+      name: 'owner->void_stay',
+      token: accounts.owner.token,
+      func: 'void_stay',
+      params: { p_stay_id: crypto.randomUUID(), p_reason: 'role check', p_expected_version: 1 },
+    },
+    {
+      name: 'owner->submit_inspection',
+      token: accounts.owner.token,
+      func: 'submit_inspection',
+      params: { p_requirement_id: crypto.randomUUID(), p_outcome: 'approved', p_findings: 'role check', p_personally_verified: true, p_expected_version: 1 },
+    },
   ];
 
   for (const call of blockedCalls) {
     const res = await invokeRpc(call.token, call.func, call.params);
+    if (call.name === 'owner->record_arrival' && res.ok) testData.stayId = res.json;
     assertRoleGuard(call.name, res);
     console.log(JSON.stringify({ check: call.name, status: res.status, ok: res.ok, body: res.json || res.text }, null, 2));
   }
@@ -359,6 +405,27 @@ async function audit(accounts, testData) {
     throw new Error(`Legitimate supervisor action failed: ${validSubmit.text}`);
   }
   console.log(JSON.stringify({ check: 'supervisor->submit_inspection', status: validSubmit.status, ok: validSubmit.ok, body: validSubmit.json || validSubmit.text }, null, 2));
+
+  const ownerReport = await invokeRpc(accounts.owner.token, 'report_maintenance_issue', {
+    p_room_id: readyRoom.id,
+    p_issue_type: 'air_conditioning',
+    p_detail: 'Owner maintenance report check',
+  });
+  if (!ownerReport.ok || typeof ownerReport.json !== 'string') {
+    throw new Error(`Legitimate owner maintenance report failed: ${ownerReport.text}`);
+  }
+  testData.issueId = ownerReport.json;
+  console.log(JSON.stringify({ check: 'owner->report_maintenance_issue', status: ownerReport.status, ok: ownerReport.ok, body: ownerReport.json || ownerReport.text }, null, 2));
+
+  const ownerResolve = await invokeRpc(accounts.owner.token, 'resolve_maintenance_issue', {
+    p_issue_id: testData.issueId,
+    p_resolution_detail: 'Owner maintenance resolution check',
+    p_expected_version: 1,
+  });
+  if (!ownerResolve.ok) {
+    throw new Error(`Legitimate owner maintenance resolution failed: ${ownerResolve.text}`);
+  }
+  console.log(JSON.stringify({ check: 'owner->resolve_maintenance_issue', status: ownerResolve.status, ok: ownerResolve.ok, body: ownerResolve.json || ownerResolve.text }, null, 2));
 }
 
 async function main() {

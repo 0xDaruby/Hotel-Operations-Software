@@ -203,7 +203,7 @@ This derived model is recommended because occupancy, cleanliness, and maintenanc
 - **FR-092 — Confirmed:** Open maintenance blocks the room from new assignment without ending an existing stay.
 - **FR-093 — Confirmed:** Resolving one issue must not resolve other issues for the room.
 - **FR-094 — Confirmed:** Resolving maintenance must not approve cleanliness or clear an inspection requirement.
-- **FR-095 — Open:** Decide whether Owner or Manager and Supervisor may resolve independently or whether both approvals are required.
+- **FR-095 — Confirmed:** Owner or Manager and Supervisor may each resolve maintenance issues independently; both approvals are not required.
 - **FR-096 — Open:** Confirm the note length limit. The prototype uses 250 characters.
 
 ### 8.10 Payment records
@@ -262,7 +262,7 @@ This derived model is recommended because occupancy, cleanliness, and maintenanc
 
 ### 9.5 Report and resolve maintenance
 
-1. A Supervisor selects the room and issue type and adds concise detail.
+1. An Owner / Manager or Supervisor selects the room and issue type and adds concise detail.
 2. The system immediately blocks new assignment.
 3. An authorized user records resolution detail for that specific issue.
 4. Other open issues and inspection conditions remain unchanged.
@@ -273,13 +273,13 @@ This derived model is recommended because occupancy, cleanliness, and maintenanc
 | --- | --- | --- | --- |
 | View room board | Confirmed | Confirmed | Confirmed |
 | View active stays needed for role | Confirmed | Confirmed | Limited to operational context |
-| Record or change stays | Open for owner | Confirmed | No |
+| Record or change stays | No | Confirmed | No |
 | View payment records | Confirmed | Operational detail only | No |
-| Approve inspection | Open for owner | No | Confirmed |
-| Report maintenance | Proposed | No | Confirmed |
-| Resolve maintenance | Open | No | Open |
+| Approve inspection | No | No | Confirmed |
+| Report maintenance | Confirmed | No | Confirmed |
+| Resolve maintenance | Confirmed | No | Confirmed |
 | View activity | All | Permitted operational activity | Confirmed operational activity |
-| Manage staff access | Proposed | No | No |
+| Manage staff access | Confirmed | No | No |
 | Change category prices | Proposed | No | No |
 
 ## 11. Conceptual data model

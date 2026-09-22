@@ -15,7 +15,7 @@ export default async function DepartureDuePage() {
         </div>
         <p>A due or overdue deadline does not vacate a room. The stay stays occupied until departure is confirmed, and confirming creates an inspection requirement automatically.</p>
       </div>
-      <DepartureQueue stays={stays} canRecord={profile.role !== 'supervisor'} now={now} />
+      <DepartureQueue stays={stays} canRecord={profile.role === 'receptionist'} now={now} />
     </>
   );
 }
