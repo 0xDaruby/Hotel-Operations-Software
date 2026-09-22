@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { recordArrivalAction } from './actions';
 import { deadlineFromNow, formatDateLabel, formatNaira } from './format';
@@ -11,6 +12,7 @@ type ArrivalFormProps = {
 };
 
 export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
+  const router = useRouter();
   const [roomId, setRoomId] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -46,6 +48,7 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
         setGuestPhone('');
         setPaidDays(1);
         setConfirmed(false);
+        router.refresh();
       } else {
         setError(result.error ?? 'Could not record the arrival.');
       }

@@ -22,6 +22,12 @@ mustInclude(migration, 'CREATE OR REPLACE FUNCTION public.resolve_maintenance_is
 mustInclude(migration, "mi.status = 'open'", 'room readiness rule');
 mustInclude(migration, 'ALTER TABLE public.maintenance_issues ENABLE ROW LEVEL SECURITY', 'maintenance access control');
 
+const cronWrapperMigration = fs.readFileSync(path.join(root, 'supabase/migrations/0005_daily_inspection_cron_wrapper.sql'), 'utf8');
+mustInclude(cronWrapperMigration, 'CREATE OR REPLACE FUNCTION public.get_daily_inspection_cron_runs', 'cron wrapper');
+mustInclude(cronWrapperMigration, 'FROM cron.job_run_details r', 'cron wrapper query');
+mustInclude(cronWrapperMigration, 'GRANT EXECUTE ON FUNCTION public.get_daily_inspection_cron_runs', 'cron wrapper permissions');
+mustInclude(cronWrapperMigration, 'SECURITY DEFINER', 'cron wrapper security');
+
 const inspectionFeature = read('apps/web/src/features/inspections/inspections.ts');
 mustInclude(inspectionFeature, 'getInspectionQueue', 'inspection queue loader');
 const inspectionWorkspace = read('apps/web/src/features/inspections/inspection-workspace.tsx');

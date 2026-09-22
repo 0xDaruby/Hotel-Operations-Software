@@ -15,6 +15,19 @@ export type InspectionRequirement = {
   version: number;
 };
 
+export const DAILY_INSPECTION_CUTOFF_HOUR_LOCAL = 8;
+
+export function isDailyInspectionDueAt(
+  now: Date,
+  isOccupied: boolean,
+  hasUnresolvedDailyInspectionForToday: boolean,
+): boolean {
+  if (!isOccupied || hasUnresolvedDailyInspectionForToday) return false;
+
+  const lagosNow = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+  return lagosNow.getHours() >= DAILY_INSPECTION_CUTOFF_HOUR_LOCAL;
+}
+
 export async function getInspectionQueue(): Promise<InspectionRequirement[]> {
   const supabase = await createClient();
   const [{ data: requirementRows, error: requirementError }, { data: roomRows, error: roomError }] = await Promise.all([

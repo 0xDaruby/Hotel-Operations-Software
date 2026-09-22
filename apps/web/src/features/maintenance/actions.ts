@@ -12,6 +12,7 @@ function cleanMessage(message: string) {
 
 function revalidateMaintenanceViews() {
   revalidatePath('/maintenance');
+  revalidatePath('/overview');
   revalidatePath('/rooms');
   revalidatePath('/stays');
   revalidatePath('/departure-due');

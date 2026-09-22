@@ -32,6 +32,7 @@ export async function submitInspectionAction(input: {
   }
 
   revalidatePath('/inspections');
+  revalidatePath('/overview');
   revalidatePath('/rooms');
   revalidatePath('/stays');
   revalidatePath('/departure-due');

@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import type { Inventory } from './inventory';
+import type { Inventory, InventorySummary } from './inventory';
 
-export function InventoryOverview({ inventory }: { inventory: Inventory }) {
+export function InventoryOverview({ inventory, summary }: { inventory: Inventory; summary: InventorySummary }) {
   const activeRooms = inventory.rooms.filter((room) => room.active);
   const categoryCounts = inventory.categories.map((category) => ({
     name: category.name,
@@ -11,9 +11,11 @@ export function InventoryOverview({ inventory }: { inventory: Inventory }) {
   return (
     <div className="inventory-overview">
       <section className="metric-strip" aria-label="Inventory summary">
-        <div><span>Active rooms</span><strong>{activeRooms.length}</strong><small>Permanent hotel inventory</small></div>
-        <div><span>Room categories</span><strong>{inventory.categories.length}</strong><small>Rates per 24-hour period</small></div>
-        <div><span>Operational facts</span><strong>—</strong><small>Added in the next lifecycle stages</small></div>
+        <div><span>Active rooms</span><strong>{summary.activeRooms}</strong><small>Permanent hotel inventory</small></div>
+        <div><span>Occupied rooms</span><strong>{summary.occupiedRooms}</strong><small>Live checked-in stays</small></div>
+        <div><span>Ready rooms</span><strong>{summary.readyRooms}</strong><small>Available for new arrivals</small></div>
+        <div><span>Inspection due</span><strong>{summary.inspectionDueRooms}</strong><small>Room conditions pending</small></div>
+        <div><span>Maintenance blocked</span><strong>{summary.maintenanceBlockedRooms}</strong><small>Open issues still active</small></div>
       </section>
       <section className="inventory-summary-panel">
         <div>

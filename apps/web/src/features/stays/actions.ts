@@ -13,6 +13,7 @@ async function runRpc(fn: string, params: Record<string, unknown>): Promise<Acti
   const supabase = await createClient();
   const { error } = await supabase.rpc(fn, params);
   if (error) return { ok: false, error: cleanMessage(error.message) };
+  revalidatePath('/overview');
   revalidatePath('/stays');
   revalidatePath('/departure-due');
   revalidatePath('/rooms');

@@ -4,9 +4,9 @@
 -- Apply after 0001_foundation_alignment.sql and 0002_stays_payments_departures.sql.
 --
 -- Time zone: the hotel operates on Africa/Lagos (confirmed), matching 0002's
--- received_on calculation. The daily cutoff TIME is still an open product
--- decision (FR-082): schedule enqueue_daily_inspections yourself once approved
--- (see the pg_cron note at the end of this file). This migration schedules nothing.
+-- received_on calculation. The daily cutoff is 08:00 Africa/Lagos; schedule
+-- enqueue_daily_inspections at that local time (see the pg_cron note at the end
+-- of this file). This migration schedules nothing.
 --
 -- Re-runnable: every statement below is guarded or CREATE OR REPLACE.
 

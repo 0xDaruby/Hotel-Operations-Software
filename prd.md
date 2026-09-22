@@ -2,7 +2,7 @@
 
 Status: Draft product authority  
 Version: 0.1  
-Updated: 2026-09-19
+Updated: 2026-09-22
 
 ## 1. Product summary
 
@@ -122,7 +122,8 @@ This derived model is recommended because occupancy, cleanliness, and maintenanc
 - **FR-001 — Confirmed:** Only Owner or Manager, Receptionist, and Supervisor profiles are in scope.
 - **FR-002 — Confirmed:** Every Supervisor uses a unique profile so inspections and history name the actual actor.
 - **FR-003 — Proposed:** The Owner or Manager creates, disables, and resets staff access; staff cannot self-register.
-- **FR-004 — Proposed:** Authorization must be enforced by the backend, not only by hiding controls in the interface.
+- **FR-004 — Confirmed:** Authorization is enforced by the backend, not only by hiding controls in the interface.
+  - Status note: targeted live authenticated verification passed on 2026-09-22. Receptionist and Supervisor blocked RPC calls returned HTTP 400 with Postgres code `P0001` role-guard responses, while receptionist `record_arrival` and Supervisor `submit_inspection` succeeded. The full UI audit was not required for this verification pass.
 - **FR-005 — Proposed:** Disabled users lose future access without removing their historical attribution.
 
 ### 8.2 Room inventory and categories
@@ -356,6 +357,7 @@ These are proposed targets and require measurement on real hardware and connecti
 10. **Correction:** changing paid days records the original and new values, actor, time, and reason and makes the amount effect understandable.
 11. **Void:** voiding a duplicate entry removes it from active totals, preserves history, and leaves the room awaiting inspection rather than ready.
 12. **Authorization:** Reception cannot approve inspection, resolve maintenance, change prices, delete history, or access staff administration through either UI or API.
+  - Status note: targeted live API role enforcement was verified with fresh authenticated accounts on 2026-09-22. Receptionist inspection and maintenance calls, and Supervisor reception calls, returned HTTP 400 / `P0001` role guards; legitimate role actions succeeded. No category-price-change RPC exists to invoke. The cron wrapper remains a documented non-blocking live-verification gap.
 
 ## 14. Open product decisions
 

@@ -23,6 +23,10 @@ export type Inventory = {
   rooms: HotelRoom[];
 };
 
+export type { InventorySummary, InventorySummaryInput } from './inventory-summary';
+
+export { summarizeInventoryMetrics } from './inventory-summary';
+
 function stringValue(row: StoredRow, keys: string[]) {
   for (const key of keys) {
     const value = row[key];

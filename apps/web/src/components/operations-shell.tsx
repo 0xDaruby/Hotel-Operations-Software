@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
   { href: '/maintenance', label: 'Maintenance', icon: '◇', roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Rooms needing attention', subtitle: 'See open issues and the rooms they block.' },
   { href: '/payments', label: 'Payments', icon: '₦', roles: ['owner'], eyebrow: 'Operational money view', subtitle: 'Staff-recorded payments grouped by the day received.' },
   { href: '/activity', label: 'Activity', icon: '◷', roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
+  { href: '/staff', label: 'Staff', icon: '◎', roles: ['owner'], eyebrow: 'Owner access', subtitle: 'Review hotel staff profiles and account access.' },
 ];
 
 const roleLabels: Record<StaffRole, string> = {

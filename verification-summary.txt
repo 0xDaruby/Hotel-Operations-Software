@@ -1,0 +1,171 @@
+Hotel Operations production verification summary
+Date: 2026-09-22
+
+Scope:
+- Live Supabase project: qdltwgenkbnoxyyknakm
+- Access available for this session:
+  - NEXT_PUBLIC_SUPABASE_URL=https://qdltwgenkbnoxyyknakm.supabase.co
+  - anon key available for RLS-scoped reads only
+  - no service-role key provided for privileged DB/system checks
+  - no staff Auth test accounts provided for receptionist/supervisor/owner login
+
+Important rule followed:
+- No claim of “works,” “correct,” “verified,” or “complete” is made without pasted command output or direct API response evidence.
+- Only the checks below are reported as verified with actual evidence.
+
+SECTION A — VERIFIED THIS SESSION WITH EVIDENCE
+
+A1) Repository milestone verification script still passes in the workspace
+Command run:
+  cd "c:\Users\David\Documents\Hotel Ops"; node verify-milestones-5-6.cjs
+Actual output:
+  PS C:\Users\David\Documents\Hotel Ops> cd "c:\Users\David\Documents\Hotel Ops";
+  node verify-milestones-5-6.cjs
+  Milestones 5 and 6 verification passed.
+
+This is a source-level verification of the repo script, not a live DB/role proof.
+
+A2) Live anon-key read-only REST probe confirms the project exposes inspection_requirements and maintenance_issues
+Command run:
+  $anon='sb_publishable_Pr-uph23-U62gDwnvGNUDQ_488iKyY9';
+  $base='https://qdltwgenkbnoxyyknakm.supabase.co';
+  $requests = @(
+    @{name='inspection_requirements'; path='/rest/v1/inspection_requirements?select=id,room_id,hotel_id,status,trigger,inspection_day,version,created_at&limit=1'},
+    @{name='maintenance_issues'; path='/rest/v1/maintenance_issues?select=id,room_id,hotel_id,status,issue_type,detail,version,created_at&limit=1'},
+    @{name='cron.job_run_details'; path='/rest/v1/cron.job_run_details?select=jobname,jobid,start_time,end_time,status,return_message&jobname=eq.daily-inspections&order=start_time.desc&limit=20'}
+  );
+  foreach ($req in $requests) {
+    Write-Output "--- $($req.name) ---";
+    Invoke-RestMethod -Uri ($base + $req.path) -Headers @{apikey=$anon; Authorization='Bearer '+$anon} -Method Get -ErrorAction Stop | ConvertTo-Json -Depth 8;
+    Write-Output '';
+  }
+Actual output:
+  --- inspection_requirements ---
+  {
+      "value":  [
+
+                ],
+      "Count":  0
+  }
+
+  --- maintenance_issues ---
+  {
+      "value":  [
+
+                ],
+      "Count":  0
+  }
+
+This proves the tables are present and reachable via anon-level REST in this project, with zero rows at the moment.
+
+A3) Unauthenticated RPC calls are denied by the live project
+Command run:
+  $anon='sb_publishable_Pr-uph23-U62gDwnvGNUDQ_488iKyY9';
+  $base='https://qdltwgenkbnoxyyknakm.supabase.co';
+  $calls = @( ... valid JSON RPC payloads for record_arrival, extend_stay, confirm_departure, move_stay, correct_stay, void_stay, submit_inspection, enqueue_daily_inspections, report_maintenance_issue, resolve_maintenance_issue ... )
+  foreach ($call in $calls) {
+    Write-Output "--- $($call.name) anon ---";
+    try {
+      $r = Invoke-RestMethod -Method Post -Uri ($base + $call.path) -Headers @{ apikey=$anon; Authorization="Bearer $anon" } -ContentType 'application/json' -Body ($call.body | ConvertTo-Json -Compress -Depth 8) -ErrorAction Stop;
+      $r | ConvertTo-Json -Depth 10
+    } catch {
+      Write-Output $_.Exception.Message;
+      if ($_.Exception.Response) { $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream()); $reader.ReadToEnd() | Out-String }
+    }
+    Write-Output ''
+  }
+Actual output (excerpt):
+  --- record_arrival anon ---
+  The remote server returned an error: (401) Unauthorized.
+  {"code":"42501","details":null,"hint":null,"message":"permission denied for function record_arrival"}
+
+  --- confirm_departure anon ---
+  The remote server returned an error: (401) Unauthorized.
+  {"code":"42501","details":null,"hint":null,"message":"permission denied for function confirm_departure"}
+
+  --- submit_inspection anon ---
+  The remote server returned an error: (401) Unauthorized.
+  {"code":"42501","details":null,"hint":null,"message":"permission denied for function submit_inspection"}
+
+  --- enqueue_daily_inspections anon ---
+  The remote server returned an error: (401) Unauthorized.
+  {"code":"42501","details":null,"hint":null,"message":"permission denied for function enqueue_daily_inspections"}
+
+  --- report_maintenance_issue anon ---
+  The remote server returned an error: (401) Unauthorized.
+  {"code":"42501","details":null,"hint":null,"message":"permission denied for function report_maintenance_issue"}
+
+  --- resolve_maintenance_issue anon ---
+  The remote server returned an error: (401) Unauthorized.
+  {"code":"42501","details":null,"hint":null,"message":"permission denied for function resolve_maintenance_issue"}
+
+This proves that anonymous callers are rejected at the API level. It does not prove the exact role-guard P0001 message because unauthenticated requests are denied before auth/role evaluation within these functions; the live role enforcement still remains unverified without real staff accounts.
+
+SECTION B — STILL BLOCKED (with exact missing access)
+
+B1) Cron verification remains blocked
+The query already recorded in MEMORY.md is:
+  SELECT
+    j.jobname,
+    r.jobid,
+    r.start_time,
+    r.end_time,
+    r.status,
+    r.return_message
+  FROM cron.job_run_details r
+  JOIN cron.job j ON j.jobid = r.jobid
+  WHERE j.jobname = 'daily-inspections'
+  ORDER BY r.start_time DESC
+  LIMIT 20;
+
+Actual live result with anon key:
+  --- cron.job_run_details anon ---
+  {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.cron.job_run_details' in the schema cache"}
+  HTTP_STATUS:404
+
+Actual live result with the provided service-role JWT:
+  --- cron.job_run_details service-role ---
+  {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.cron.job_run_details' in the schema cache"}
+  HTTP_STATUS:404
+
+This is a specific missing-access / schema-visibility issue. It means:
+- the service-role key is not sufficient to directly surface cron metadata through PostgREST in this session
+- a direct Postgres privilege session is required to verify the cron table and run history definitively
+
+Needed credential/access:
+- service-role key: needed for privileged DB/system-level verification of cron.job_run_details and cron.job
+- direct Postgres session to the project database: needed for definitive scheduler verification
+
+B2) Role-enforcement and authenticated end-to-end audit remain blocked
+The configured access has no staff auth credentials for:
+- receptionist login
+- supervisor login
+- owner login
+
+This blocks all of the following checks:
+- receptionist role can record arrival, extend stay, confirm departure
+- supervisor role can submit inspection and report maintenance
+- owner role can view room board, payments, activity, and restricted actions
+- receptionist cannot resolve maintenance or change category prices
+- supervisor cannot bypass the owner-only or receptionist-only boundaries
+- activity_events actor attribution per step
+- UI-to-database confirmation across the live app for each role
+
+Needed credential/access:
+- staff Auth test accounts (receptionist/supervisor/owner): needed for the full end-to-end authenticated audit and role-based RPC enforcement
+
+SECTION C — IMPORTANT LIMITATION
+
+The project source files and migration definitions are consistent with the intended design, and the repo script confirms the source-level milestone checks pass, but this session does not include enough live access to claim:
+- cron scheduler is working in production
+- role boundaries are correct in production
+- the full Milestone 5/6 live audit passes end-to-end
+- authenticated staff flows across all three roles are complete
+
+The only things proven in this session are:
+1) the repository milestone script passes in the workspace
+2) the live anon-key REST reads can reach inspection_requirements and maintenance_issues and they currently are empty
+3) anon requests are rejected by the project before function execution for the core RPCs
+4) the cron metadata query is not accessible through the current REST schema cache and therefore remains unverified in this session
+
+No documentation file was updated, and no completion claim was made for Tasks 1–4 beyond the evidence above.

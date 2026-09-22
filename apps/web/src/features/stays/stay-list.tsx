@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Dialog } from '@/components/dialog';
 import {
@@ -25,14 +26,19 @@ type StayListProps = {
 type DialogState = { type: 'extend' | 'move' | 'correct' | 'void' | 'depart'; stay: Stay } | null;
 
 function useAction(onDone: () => void) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   function run(fn: () => Promise<ActionResult>) {
     setError(null);
     startTransition(async () => {
       const result = await fn();
-      if (result.ok) onDone();
-      else setError(result.error ?? 'The operation could not be completed.');
+      if (result.ok) {
+        router.refresh();
+        onDone();
+      } else {
+        setError(result.error ?? 'The operation could not be completed.');
+      }
     });
   }
   return { pending, error, run };

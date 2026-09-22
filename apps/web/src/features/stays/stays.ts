@@ -75,11 +75,23 @@ function numberValue(row: Record<string, unknown>, ...keys: string[]) {
   return null;
 }
 
-function parseStay(row: Record<string, unknown>, roomNumberById: Map<string, string>, categoryNameById: Map<string, string>): Stay | null {
+export function parseStay(row: Record<string, unknown>, roomNumberById: Map<string, string>, categoryNameById: Map<string, string>): Stay | null {
   const roomId = stringValue(row, 'room_id');
-  const guestName = stringValue(row, 'guest_name').trim();
+  const guestName = stringValue(row, 'guest_name')?.trim();
   if (!roomId || !guestName) return null;
   const categoryId = stringValue(row, 'category_id');
+
+  const staffProfile = (() => {
+    const sp = row.staff_profiles;
+    if (sp && typeof sp === 'object' && !Array.isArray(sp) && 'display_name' in sp) {
+      return (sp as { display_name?: string }).display_name ?? null;
+    }
+    if (Array.isArray(sp) && sp.length > 0 && typeof sp[0] === 'object' && sp[0] && 'display_name' in sp[0]) {
+      return (sp[0] as { display_name?: string }).display_name ?? null;
+    }
+    return null;
+  })();
+
   return {
     id: stringValue(row, 'id'),
     roomId,
@@ -94,8 +106,25 @@ function parseStay(row: Record<string, unknown>, roomNumberById: Map<string, str
     paidDays: numberValue(row, 'paid_days') ?? 1,
     status: (stringValue(row, 'status') as Stay['status']) || 'active',
     version: numberValue(row, 'version') ?? 1,
-    createdByName: nullableString(row, 'created_by_name'),
+    createdByName: staffProfile ?? nullableString(row, 'created_by_name'),
   };
+}
+
+export function getBlockedRoomIds(
+  inspectionRows: Array<{ room_id?: string | null; status?: string | null }> = [],
+  maintenanceRoomIds: Iterable<string> = [],
+): Set<string> {
+  const blockedRoomIds = new Set<string>();
+
+  for (const row of inspectionRows) {
+    if (row.room_id && row.status && row.status !== 'approved') blockedRoomIds.add(row.room_id);
+  }
+
+  for (const roomId of maintenanceRoomIds) {
+    if (roomId) blockedRoomIds.add(roomId);
+  }
+
+  return blockedRoomIds;
 }
 
 export async function getOperationalContext(): Promise<OperationalContext> {
@@ -109,11 +138,14 @@ export async function getOperationalContext(): Promise<OperationalContext> {
     .select('id, room_number, category_id, active, room_categories(name, daily_rate)')
     .eq('active', true)
     .order('room_number', { ascending: true });
-  const { data: inspectionRows } = await supabase
-    .from('inspection_requirements')
-    .select('room_id, status')
-    .neq('status', 'approved');
-  const blockedRoomIds = new Set((inspectionRows ?? []).map((row: { room_id: string }) => row.room_id));
+  const [{ data: inspectionRows }, { data: maintenanceRows }] = await Promise.all([
+    supabase.from('inspection_requirements').select('room_id, status').neq('status', 'approved'),
+    supabase.from('maintenance_issues').select('room_id').eq('status', 'open'),
+  ]);
+  const blockedRoomIds = getBlockedRoomIds(
+    (inspectionRows ?? []) as Array<{ room_id?: string | null; status?: string | null }>,
+    ((maintenanceRows ?? []) as Array<{ room_id?: string | null }>).map((row) => row.room_id ?? '').filter(Boolean),
+  );
   const { data: activeStayRows } = await supabase
     .from('stays')
     .select('room_id')
@@ -147,15 +179,18 @@ export async function getOperationalContext(): Promise<OperationalContext> {
 
 export async function getActiveStays(): Promise<Stay[]> {
   const supabase = await createClient();
-  const [{ data: stayRows }, { data: roomRows }, { data: categoryRows }] = await Promise.all([
+  const [{ data: stayRows, error: stayError }, { data: roomRows }, { data: categoryRows }] = await Promise.all([
     supabase
       .from('stays')
-      .select('id, room_id, guest_name, guest_phone, category_id, original_daily_rate, arrival_at, departure_due_at, paid_days, status, version, created_by_name')
+      .select('id, room_id, guest_name, guest_phone, category_id, original_daily_rate, arrival_at, departure_due_at, paid_days, status, version, created_by, staff_profiles!created_by(display_name)')
       .eq('status', 'active')
       .order('arrival_at', { ascending: true }),
     supabase.from('rooms').select('id, room_number'),
     supabase.from('room_categories').select('id, name'),
   ]);
+
+  if (stayError) throw new Error(`Unable to load active stays: ${stayError.message}`);
+
   const roomNumberById = new Map((roomRows ?? []).map((row: { id: string; room_number: string }) => [row.id, row.room_number]));
   const categoryNameById = new Map((categoryRows ?? []).map((row: { id: string; name: string }) => [row.id, row.name]));
   return ((stayRows ?? []) as Record<string, unknown>[])
