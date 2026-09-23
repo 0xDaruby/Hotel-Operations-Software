@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import AnimatedDropdown from '@/components/ui/animated-dropdown';
 import { recordArrivalAction } from './actions';
 import { deadlineFromNow, formatDateLabel, formatNaira } from './format';
 
@@ -23,6 +24,10 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
   const [pending, startTransition] = useTransition();
 
   const room = readyRooms.find((item) => item.id === roomId) ?? null;
+  const roomOptions = readyRooms.map((item) => ({
+    name: `${item.roomNumber} — ${item.categoryName} — ${formatNaira(item.dailyRate)}/day`,
+    value: item.id,
+  }));
   const days = Number.isFinite(paidDays) ? Math.max(1, Math.min(30, Math.trunc(paidDays))) : 1;
   const amount = room ? room.dailyRate * days : 0;
   const deadline = room ? deadlineFromNow(days) : null;
@@ -62,14 +67,14 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
       <div className="arrival-grid">
         <label className="inventory-field">
           <span>Ready room</span>
-          <select value={roomId} onChange={(event) => setRoomId(event.target.value)} required>
-            <option value="">Choose a ready room</option>
-            {readyRooms.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.roomNumber} — {item.categoryName} — {formatNaira(item.dailyRate)}/day
-              </option>
-            ))}
-          </select>
+          <AnimatedDropdown
+            items={roomOptions}
+            text={readyRooms.length ? 'Choose a ready room' : 'No ready rooms available'}
+            selectedValue={roomId}
+            onSelect={(item) => setRoomId(item.value ?? '')}
+            aria-label="Ready room"
+            disabled={!readyRooms.length}
+          />
         </label>
         <label className="inventory-field">
           <span>Guest name</span>

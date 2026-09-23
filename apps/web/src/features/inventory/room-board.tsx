@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { RepairIcon, UserCheck01Icon } from '@/components/icons';
+import AnimatedDropdown from '@/components/ui/animated-dropdown';
 import type { HotelRoom, RoomCategory } from './inventory';
 
 type RoomBoardProps = {
@@ -31,6 +32,14 @@ export function RoomBoard({
   const [floor, setFloor] = useState('all');
   const [query, setQuery] = useState('');
   const floors = [...new Set(rooms.map((room) => room.floor))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const categoryOptions = [
+    { name: 'All categories', value: 'all' },
+    ...categories.map((category) => ({ name: category.name, value: category.id })),
+  ];
+  const floorOptions = [
+    { name: 'All floors', value: 'all' },
+    ...floors.map((item) => ({ name: item, value: item })),
+  ];
   const visibleRooms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return rooms.filter((room) =>
@@ -60,17 +69,21 @@ export function RoomBoard({
       <div className="room-toolbar">
         <label className="inventory-field">
           <span>Category</span>
-          <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-            <option value="all">All categories</option>
-            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-          </select>
+          <AnimatedDropdown
+            items={categoryOptions}
+            selectedValue={categoryId}
+            onSelect={(item) => setCategoryId(item.value ?? 'all')}
+            aria-label="Filter by category"
+          />
         </label>
         <label className="inventory-field">
           <span>Floor</span>
-          <select value={floor} onChange={(event) => setFloor(event.target.value)}>
-            <option value="all">All floors</option>
-            {floors.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
+          <AnimatedDropdown
+            items={floorOptions}
+            selectedValue={floor}
+            onSelect={(item) => setFloor(item.value ?? 'all')}
+            aria-label="Filter by floor"
+          />
         </label>
         <label className="inventory-field inventory-search">
           <span>Find a room</span>
