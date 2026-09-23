@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { UserCheck01Icon } from '@/components/icons';
 import { useState, useTransition } from 'react';
 import { Dialog } from '@/components/dialog';
 import {
@@ -78,7 +79,7 @@ export function StayList({ stays, payments, totals, readyRooms, canRecord }: Sta
                 <p className="stay-room">{stay.roomNumber}</p>
                 <h3>{stay.guestName}</h3>
               </div>
-              <span className="status-badge status-occupied">Occupied</span>
+              <span className="status-badge status-occupied"><UserCheck01Icon className="icon icon-sm icon-status-occupied" aria-hidden="true" />Occupied</span>
             </div>
             <dl className="stay-facts">
               <div><dt>Category</dt><dd>{stay.categoryName}</dd></div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { HourglassOffIcon } from '@/components/icons';
 import { formatDateLabel, formatNaira } from './format';
 import { DepartDialog } from './stay-list';
 import type { Stay } from './stays';
@@ -78,7 +79,7 @@ function QueueColumn({ title, hint, stays, tone, canRecord, onDepart, emptyLabel
   return (
     <section className={`queue-column queue-${tone}`} aria-label={title}>
       <div className="queue-column-head">
-        <h3>{title}</h3>
+        <h3 className="queue-title"><HourglassOffIcon className={`icon icon-sm ${tone === 'overdue' ? 'icon-status-danger' : tone === 'soon' ? 'icon-status-pending' : 'icon-status-muted'}`} aria-hidden="true" />{title}</h3>
         <span className="status-badge status-neutral">{stays.length}</span>
       </div>
       <p className="queue-hint">{hint}</p>

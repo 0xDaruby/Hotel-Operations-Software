@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { RepairIcon } from '@/components/icons';
 import { Dialog } from '@/components/dialog';
 import { formatDateTime } from '@/features/stays/format';
 import { reportMaintenanceIssueAction, resolveMaintenanceIssueAction } from './actions';
@@ -44,7 +45,7 @@ export function MaintenanceWorkspace({ issues, rooms, canReport, canResolve }: M
                     <p className="stay-room">{issue.roomNumber}</p>
                     <h3>{issueTypeLabels[issue.issueType]}</h3>
                   </div>
-                  <span className="status-badge status-danger">Assignment blocked</span>
+                  <span className="status-badge status-danger"><RepairIcon className="icon icon-sm icon-status-pending" aria-hidden="true" />Assignment blocked</span>
                 </div>
                 <dl className="inspection-facts">
                   <div><dt>Reported</dt><dd>{formatDateTime(issue.reportedAt)}</dd></div>

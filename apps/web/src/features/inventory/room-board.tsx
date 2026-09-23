@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { RepairIcon, UserCheck01Icon } from '@/components/icons';
 import type { HotelRoom, RoomCategory } from './inventory';
 
 type RoomBoardProps = {
@@ -101,10 +102,10 @@ export function RoomBoard({
                 <div className="room-badges">
                   {!room.active ? <span className="status-badge status-muted">Inactive inventory</span> : null}
                   <span className={isOccupied ? 'status-badge status-occupied' : 'status-badge status-neutral'}>
-                    {isOccupied ? 'Occupied' : 'Unoccupied'}
+                    {isOccupied ? <><UserCheck01Icon className="icon icon-sm icon-status-occupied" aria-hidden="true" />Occupied</> : 'Unoccupied'}
                   </span>
                   {isInspectionDue ? <span className="status-badge status-pending">Inspection due</span> : null}
-                  {issueCount > 0 ? <span className="status-badge status-danger">Maintenance blocked</span> : null}
+                  {issueCount > 0 ? <span className="status-badge status-danger"><RepairIcon className="icon icon-sm icon-status-pending" aria-hidden="true" />Maintenance blocked</span> : null}
                   {isReady ? <span className="status-badge status-ready">Ready for check-in</span> : null}
                 </div>
                 {!isReady ? <p className="room-reason">Not ready: {blockers.join(' · ')}</p> : null}

@@ -23,7 +23,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
     <dialog ref={ref} className="ops-dialog" onClose={onClose} aria-label={title}>
       <div className="ops-dialog-head">
         <h3>{title}</h3>
-        <button type="button" className="ops-dialog-close" onClick={onClose} aria-label="Close dialog">×</button>
+        <button type="button" className="ops-dialog-close" onClick={onClose}>Close</button>
       </div>
       <div className="ops-dialog-body">{children}</div>
     </dialog>

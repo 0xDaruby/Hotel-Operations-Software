@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Wallet02Icon } from '@/components/icons';
 import { formatNaira } from './format';
 import type { PaymentRecord } from './stays';
 
@@ -27,7 +28,7 @@ export function PaymentsView({ payments, total, date, today }: PaymentsViewProps
       <div className="inventory-intro">
         <div>
           <p className="eyebrow">Payments received</p>
-          <h2 id="payments-heading">{formatNaira(total)} recorded on {date}</h2>
+          <h2 id="payments-heading" className="payments-heading"><Wallet02Icon className="icon icon-lg icon-brand-action" aria-hidden="true" />{formatNaira(total)} recorded on {date}</h2>
         </div>
         <p>Arrival and extension payments are recorded separately on the day money is received. Voided stays are excluded.</p>
       </div>

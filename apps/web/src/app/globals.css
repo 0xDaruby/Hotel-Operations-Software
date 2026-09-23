@@ -20,6 +20,16 @@
   --text-secondary: var(--muted);
   --status-pending-bg: #eddbbc;
   --status-pending-fg: #704d28;
+  --status-ready-bg: #dfe5d5;
+  --status-ready-fg: #3f4d33;
+  --status-occupied-bg: #cdd3bd;
+  --status-occupied-fg: #3a472f;
+  --status-danger-bg: #ebd1c8;
+  --status-danger-fg: #793d32;
+  --brand-action: #715039;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
   /* Component tokens */
   --card-bg: var(--surface);
   --card-border: var(--border-subtle);
@@ -53,7 +63,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .main-nav a { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 12px 13px; border-radius: 7px; font-size: 13px; font-weight: 500; text-decoration: none; transition: background-color .15s, color .15s; }
 .main-nav a:hover { background: #faf6ef40; }
 .main-nav a[aria-current="page"] { color: var(--paper); background: var(--deep-brown); box-shadow: 0 3px 6px #302a2310; }
-.nav-icon { width: 19px; font-size: 17px; text-align: center; }
+.nav-icon { display: grid; width: var(--icon-md); place-items: center; color: currentColor; }
+.icon { display: inline-block; flex: 0 0 auto; }
+.icon-sm { width: var(--icon-sm); height: var(--icon-sm); }
+.icon-md { width: var(--icon-md); height: var(--icon-md); }
+.icon-lg { width: var(--icon-lg); height: var(--icon-lg); }
 .sidebar-note { margin-top: auto; padding: 20px 10px 0; border-top: 1px solid #302a2329; color: #37402f; }
 .sidebar-note span { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; }
 .sidebar-note i { width: 6px; height: 6px; background: #3d4b31; border-radius: 50%; }
@@ -163,8 +177,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @keyframes loading-pulse { 50% { transform: translateY(-4px); opacity: .55; } }
 
 /* Milestones 3+4 — walk-in stays, departure management, payments */
-.status-occupied { color: #3a472f; background: #cdd3bd; }
-.status-ready { color: #3f4d33; background: #dfe5d5; }
+.status-occupied { color: var(--status-occupied-fg); background: var(--status-occupied-bg); }
+.status-ready { color: var(--status-ready-fg); background: var(--status-ready-bg); }
 .button-danger { color: var(--paper); background: var(--rose); border-color: var(--rose); }
 .button-danger:hover { background: #8a574a; }
 
@@ -204,7 +218,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .ops-dialog::backdrop { background: #302a236b; }
 .ops-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
 .ops-dialog-head h2 { margin: 0; font-size: 22px; }
-.ops-dialog-close { display: grid; place-items: center; width: 34px; height: 34px; background: transparent; border: 0; border-radius: 6px; font-size: 22px; line-height: 1; }
+.ops-dialog-close { display: grid; place-items: center; min-width: 64px; min-height: 44px; padding: 8px 10px; background: transparent; border: 0; border-radius: 6px; font-size: 11px; font-weight: 700; line-height: 1; }
 .ops-dialog-close:hover { background: #8460440d; }
 .ops-dialog-body { padding: 20px; }
 .stay-dialog-form { display: grid; gap: 16px; }
@@ -216,6 +230,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .queue-overdue { background: #f3e4de; border-color: #a76d5e66; }
 .queue-soon { background: #f5ecdb; border-color: #c4a07166; }
 .queue-column-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.queue-title { display: flex; align-items: center; gap: 7px; margin: 0; }
 .queue-column-head h2 { margin: 0; font-size: 17px; }
 .queue-hint { margin: 0; color: var(--text-secondary); font-size: 10px; line-height: 1.5; }
 .queue-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
@@ -270,8 +285,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); height: 100dvh; padding: 24px 18px; transform: translateX(-102%); transition: transform .2s ease; box-shadow: 12px 0 40px #302a2330; }
   .sidebar-open { transform: translateX(0); }
   .brand-row { padding: 0 5px 28px; }
-  .menu-close { display: grid; place-items: center; width: 42px; height: 42px; margin-left: auto; background: transparent; border: 0; border-radius: 7px; font-size: 25px; }
-  .menu-button { display: grid; place-items: center; width: 42px; height: 42px; background: transparent; border: 1px solid var(--line); border-radius: 7px; }
+  .menu-close { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; background: transparent; border: 0; border-radius: 7px; font-size: 25px; }
+  .menu-button { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; border: 1px solid var(--line); border-radius: 7px; }
   .nav-backdrop { position: fixed; inset: 0; display: block; width: 100%; height: 100%; padding: 0; background: #302a236b; border: 0; z-index: 20; }
   .topbar { min-height: 68px; padding: 10px 18px; }
   .hotel-symbol { display: none; }
@@ -312,7 +327,16 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 /* Milestones 5+6 — room board maintenance and inspection status */
-.status-danger { color: #793d32; background: #ebd1c8; }
+.status-danger { color: var(--status-danger-fg); background: var(--status-danger-bg); }
+.icon-status-danger { color: var(--status-danger-fg); }
+.icon-status-pending { color: var(--status-pending-fg); }
+.icon-status-muted { color: var(--text-secondary); }
+.icon-status-occupied { color: var(--status-occupied-fg); }
+.icon-brand-action { color: var(--brand-action); }
+.activity-dot { color: var(--brand-action); }
+.staff-page h2 { display: flex; align-items: center; gap: 8px; }
+.payments-heading { display: flex; align-items: center; gap: 8px; }
+.inspect-action { gap: 7px; }
 .room-reason { margin: 0 0 10px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
 .inspection-workspace { display: grid; gap: 20px; min-width: 0; }
 .inspection-list, .maintenance-list { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }

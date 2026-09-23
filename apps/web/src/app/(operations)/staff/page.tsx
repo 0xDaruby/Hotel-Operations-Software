@@ -1,8 +1,9 @@
 import { requireStaffProfile } from '@/features/auth/staff-profile';
 import { getStaffMembers } from '@/features/staff/staff-management';
+import { UserListIcon } from '@/components/icons';
 
 export default async function StaffManagementPage() {
-  const profile = await requireStaffProfile(['owner']);
+  await requireStaffProfile(['owner']);
   const staff = await getStaffMembers();
 
   return (
@@ -10,7 +11,7 @@ export default async function StaffManagementPage() {
       <div className="inventory-intro">
         <div>
           <p className="eyebrow">Owner access</p>
-          <h2 id="staff-heading">Hotel staff</h2>
+          <h2 id="staff-heading"><UserListIcon className="icon icon-lg" aria-hidden="true" />Hotel staff</h2>
         </div>
         <p>Only the owner creates or manages staff access. Profiles remain tied to the authenticated hotel and the matching Supabase user.</p>
       </div>

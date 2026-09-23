@@ -5,26 +5,27 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { StaffProfile, StaffRole } from '@/features/auth/staff-profile';
 import { createClient } from '@/lib/supabase/client';
+import { BellDotIcon, Home04Icon, Hotel02Icon, HourglassOffIcon, RepairIcon, TaskDaily02Icon, UserCheck01Icon, UserListIcon, Wallet02Icon, type IconProps } from '@/components/icons';
 
 type NavItem = {
   href: string;
   label: string;
-  icon: string;
+  icon?: (props: IconProps) => ReactNode;
   roles: readonly StaffRole[];
   eyebrow: string;
   subtitle: string;
 };
 
 const navigation: NavItem[] = [
-  { href: '/overview', label: 'Overview', icon: '◫', roles: ['owner'], eyebrow: 'The day, in view', subtitle: 'Room readiness, active stays, and the work that needs your attention.' },
-  { href: '/rooms', label: 'Room board', icon: '▦', roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Every room, one truth', subtitle: 'Occupancy, readiness, and maintenance — together.' },
-  { href: '/stays', label: 'Guest stays', icon: '↗', roles: ['owner', 'receptionist'], eyebrow: 'Walk-in operations', subtitle: 'Arrivals, continuous stays, extensions, and departures.' },
-  { href: '/departure-due', label: 'Departure due', icon: '⌛', roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
-  { href: '/inspections', label: 'Inspections', icon: '✓', roles: ['owner', 'supervisor'], eyebrow: 'Shared inspection queue', subtitle: 'Check rooms in person and keep the whole team current.' },
-  { href: '/maintenance', label: 'Maintenance', icon: '◇', roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Rooms needing attention', subtitle: 'See open issues and the rooms they block.' },
-  { href: '/payments', label: 'Payments', icon: '₦', roles: ['owner'], eyebrow: 'Operational money view', subtitle: 'Staff-recorded payments grouped by the day received.' },
-  { href: '/activity', label: 'Activity', icon: '◷', roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
-  { href: '/staff', label: 'Staff', icon: '◎', roles: ['owner'], eyebrow: 'Owner access', subtitle: 'Review hotel staff profiles and account access.' },
+  { href: '/overview', label: 'Overview', icon: Home04Icon, roles: ['owner'], eyebrow: 'The day, in view', subtitle: 'Room readiness, active stays, and the work that needs your attention.' },
+  { href: '/rooms', label: 'Room board', icon: Hotel02Icon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Every room, one truth', subtitle: 'Occupancy, readiness, and maintenance — together.' },
+  { href: '/stays', label: 'Guest stays', icon: UserCheck01Icon, roles: ['owner', 'receptionist'], eyebrow: 'Walk-in operations', subtitle: 'Arrivals, continuous stays, extensions, and departures.' },
+  { href: '/departure-due', label: 'Departure due', icon: HourglassOffIcon, roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
+  { href: '/inspections', label: 'Inspections', icon: TaskDaily02Icon, roles: ['owner', 'supervisor'], eyebrow: 'Shared inspection queue', subtitle: 'Check rooms in person and keep the whole team current.' },
+  { href: '/maintenance', label: 'Maintenance', icon: RepairIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Rooms needing attention', subtitle: 'See open issues and the rooms they block.' },
+  { href: '/payments', label: 'Payments', icon: Wallet02Icon, roles: ['owner'], eyebrow: 'Operational money view', subtitle: 'Staff-recorded payments grouped by the day received.' },
+  { href: '/activity', label: 'Activity', icon: BellDotIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
+  { href: '/staff', label: 'Staff', icon: UserListIcon, roles: ['owner'], eyebrow: 'Owner access', subtitle: 'Review hotel staff profiles and account access.' },
 ];
 
 const roleLabels: Record<StaffRole, string> = {
@@ -55,13 +56,13 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
           <div className="brand-row">
             <span className="brand-mark" aria-hidden="true">X</span>
             <span><strong>XYZ Hotel</strong><small>Operations desk</small></span>
-            <button className="menu-close" onClick={() => setMenuOpen(false)} type="button" aria-label="Close navigation">×</button>
+              <button className="menu-close" onClick={() => setMenuOpen(false)} type="button">Close</button>
           </div>
           <p className="nav-heading">Workspace</p>
           <nav className="main-nav" aria-label="Main navigation">
             {items.map((item) => (
               <Link key={item.href} href={item.href} aria-current={pathname === item.href ? 'page' : undefined} onClick={() => setMenuOpen(false)}>
-                <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+                {item.icon ? <span className="nav-icon" aria-hidden="true"><item.icon className="icon icon-md" /></span> : null}
                 <span>{item.label}</span>
               </Link>
             ))}
@@ -77,8 +78,8 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
         <div className="workspace">
           <header className="topbar">
             <div className="hotel-context">
-              <button className="menu-button" onClick={() => setMenuOpen(true)} type="button" aria-label="Open navigation">☰</button>
-              <span className="hotel-symbol" aria-hidden="true">⌂</span>
+              <button className="menu-button" onClick={() => setMenuOpen(true)} type="button">Menu</button>
+              <span className="hotel-symbol" aria-hidden="true"><Home04Icon className="icon icon-sm" /></span>
               <strong>Hotel operations</strong><span>/ Staff workspace</span>
             </div>
             <div className="profile-summary">

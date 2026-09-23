@@ -1,5 +1,6 @@
 import { requireStaffProfile } from '@/features/auth/staff-profile';
 import { formatActivityAction, getActivityContextLabel, getActivityFeed } from '@/features/activity/activity';
+import { BellDotIcon } from '@/components/icons';
 
 export default async function ActivityPage() {
   await requireStaffProfile(['owner', 'receptionist', 'supervisor']);
@@ -19,7 +20,7 @@ export default async function ActivityPage() {
         <div className="activity-list" aria-live="polite">
           {events.map((event) => (
             <article className="activity-item" key={event.id}>
-              <div className="activity-dot" aria-hidden="true" />
+              <BellDotIcon className="icon icon-md activity-dot" aria-hidden="true" />
               <div className="activity-copy">
                 <strong>{formatActivityAction(event.action)}</strong>
                 <p>{getActivityContextLabel({ roomNumber: event.roomNumber, guestName: event.guestName })}</p>

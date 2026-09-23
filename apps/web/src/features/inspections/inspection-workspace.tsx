@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { TaskDaily02Icon } from '@/components/icons';
 import { Dialog } from '@/components/dialog';
 import { formatDateTime } from '@/features/stays/format';
 import { submitInspectionAction } from './actions';
@@ -27,6 +28,11 @@ function statusClass(status: InspectionRequirement['status']) {
   return status === 'attention' ? 'status-badge status-danger' : 'status-badge status-pending';
 }
 
+function statusIcon(status: InspectionRequirement['status']) {
+  if (status === 'access_blocked') return null;
+  return <TaskDaily02Icon className={`icon icon-sm ${status === 'attention' ? 'icon-status-danger' : 'icon-status-pending'}`} aria-hidden="true" />;
+}
+
 export function InspectionWorkspace({ requirements, canRecord }: InspectionWorkspaceProps) {
   const [selected, setSelected] = useState<InspectionRequirement | null>(null);
 
@@ -49,7 +55,7 @@ export function InspectionWorkspace({ requirements, canRecord }: InspectionWorks
                   <p className="stay-room">{requirement.roomNumber}</p>
                   <h3>{triggerLabel(requirement.trigger)}</h3>
                 </div>
-                <span className={statusClass(requirement.status)}>{statusLabel(requirement.status)}</span>
+                <span className={statusClass(requirement.status)}>{statusIcon(requirement.status)}{statusLabel(requirement.status)}</span>
               </div>
               <dl className="inspection-facts">
                 <div><dt>Due</dt><dd>{formatDateTime(requirement.dueAt)}</dd></div>
@@ -59,7 +65,7 @@ export function InspectionWorkspace({ requirements, canRecord }: InspectionWorks
               {requirement.findings ? <p className="inspection-findings"><strong>Last finding:</strong> {requirement.findings}</p> : null}
               {canRecord ? (
                 <div className="stay-actions">
-                  <button className="button button-secondary" type="button" onClick={() => setSelected(requirement)}>Record outcome</button>
+                  <button className="button button-secondary inspect-action" type="button" onClick={() => setSelected(requirement)}><TaskDaily02Icon className="icon icon-sm icon-status-pending" aria-hidden="true" />Inspect room</button>
                 </div>
               ) : null}
             </article>
