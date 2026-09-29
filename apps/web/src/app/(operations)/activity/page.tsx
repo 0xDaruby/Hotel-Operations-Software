@@ -13,7 +13,6 @@ export default async function ActivityPage() {
           <p className="eyebrow">Attributed history</p>
           <h2 id="activity-heading">{events.length} recent {events.length === 1 ? 'event' : 'events'}</h2>
         </div>
-        <p>Every consequential action is stored with the actor, the affected room or stay, and the time it was recorded.</p>
       </div>
 
       {events.length ? (

@@ -43,7 +43,7 @@ export function InspectionWorkspace({ requirements, canRecord }: InspectionWorks
           <p className="eyebrow">Shared supervisor queue</p>
           <h2 id="inspection-queue-heading">{requirements.length} open {requirements.length === 1 ? 'inspection' : 'inspections'}</h2>
         </div>
-        <p>No inspection assignments or claims. Supervisors can complete any open requirement, and all unfinished work remains in the shared queue.{canRecord ? '' : ' Only Supervisors can record outcomes; this view is read-only.'}</p>
+        <p>{canRecord ? '' : ' Only Supervisors can record outcomes; this view is read-only.'}</p>
       </div>
 
       {requirements.length ? (

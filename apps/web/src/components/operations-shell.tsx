@@ -17,11 +17,11 @@ type NavItem = {
 };
 
 const navigation: NavItem[] = [
-  { href: '/overview', label: 'Overview', icon: Home04Icon, roles: ['owner'], eyebrow: 'The day, in view', subtitle: 'Room readiness, active stays, and the work that needs your attention.' },
+  { href: '/overview', label: 'Hotel Overview', icon: Home04Icon, roles: ['owner'], eyebrow: '', subtitle: '' },
   { href: '/rooms', label: 'Room board', icon: Hotel02Icon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Every room, one truth', subtitle: 'Occupancy, readiness, and maintenance — together.' },
   { href: '/stays', label: 'Guest stays', icon: UserCheck01Icon, roles: ['owner', 'receptionist'], eyebrow: 'Walk-in operations', subtitle: 'Arrivals, continuous stays, extensions, and departures.' },
   { href: '/departure-due', label: 'Departure due', icon: HourglassOffIcon, roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
-  { href: '/inspections', label: 'Inspections', icon: TaskDaily02Icon, roles: ['owner', 'supervisor'], eyebrow: 'Shared inspection queue', subtitle: 'Check rooms in person and keep the whole team current.' },
+  { href: '/inspections', label: 'Inspections', icon: TaskDaily02Icon, roles: ['owner', 'supervisor'], eyebrow: '', subtitle: '' },
   { href: '/maintenance', label: 'Maintenance', icon: RepairIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Rooms needing attention', subtitle: 'See open issues and the rooms they block.' },
   { href: '/payments', label: 'Payments', icon: Wallet02Icon, roles: ['owner'], eyebrow: 'Operational money view', subtitle: 'Staff-recorded payments grouped by the day received.' },
   { href: '/activity', label: 'Activity', icon: BellDotIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
@@ -68,8 +68,6 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
             ))}
           </nav>
           <div className="sidebar-note">
-            <span><i aria-hidden="true" />A shared view of your hotel</span>
-            <p>Every room. Every handover.<br />Every update accounted for.</p>
           </div>
         </aside>
 
@@ -96,7 +94,7 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
               <p>{current?.subtitle}</p>
             </header>
             {children}
-            <footer className="footer"><span>Production staff workspace</span><span>XYZ Hotel / Operations</span></footer>
+            <footer className="footer"><span></span><span>XYZ Hotel / Operations</span></footer>
           </main>
         </div>
       </div>

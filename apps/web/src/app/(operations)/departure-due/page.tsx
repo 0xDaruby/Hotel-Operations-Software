@@ -13,7 +13,6 @@ export default async function DepartureDuePage() {
           <p className="eyebrow">Departure management</p>
           <h2>{stays.length} occupied {stays.length === 1 ? 'room' : 'rooms'}</h2>
         </div>
-        <p>A due or overdue deadline does not vacate a room. The stay stays occupied until departure is confirmed, and confirming creates an inspection requirement automatically.</p>
       </div>
       <DepartureQueue stays={stays} canRecord={profile.role === 'receptionist'} now={now} />
     </>

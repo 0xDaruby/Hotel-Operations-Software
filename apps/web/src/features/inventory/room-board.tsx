@@ -63,7 +63,6 @@ export function RoomBoard({
           <p className="eyebrow">Permanent inventory</p>
           <h2 id="room-board-heading">{visibleRooms.length} of {rooms.length} rooms</h2>
         </div>
-        <p>Occupancy, inspections, and maintenance are separate facts. A room is ready for check-in only when all three are clear.</p>
       </div>
 
       <div className="room-toolbar">

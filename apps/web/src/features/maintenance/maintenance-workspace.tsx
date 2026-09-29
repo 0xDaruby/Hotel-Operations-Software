@@ -33,7 +33,6 @@ export function MaintenanceWorkspace({ issues, rooms, canReport, canResolve }: M
             <p className="eyebrow">Maintenance operations</p>
             <h2 id="maintenance-issues-heading">{issues.length} open {issues.length === 1 ? 'issue' : 'issues'}</h2>
           </div>
-          <p>Each open issue blocks new room assignment. Resolving an issue does not approve cleanliness or clear any inspection requirement.</p>
         </div>
 
         {issues.length ? (

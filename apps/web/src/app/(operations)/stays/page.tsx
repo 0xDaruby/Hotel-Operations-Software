@@ -18,7 +18,6 @@ export default async function StaysPage() {
             <p className="eyebrow">Walk-in stays</p>
             <h2>{stays.length} active {stays.length === 1 ? 'stay' : 'stays'}</h2>
           </div>
-          <p>Rooms stay occupied past their deadline until reception confirms departure. Expired deadlines never free a room on their own.</p>
         </div>
         <StayList stays={stays} payments={payments} totals={totals} readyRooms={context.readyRooms} canRecord={canRecord} />
       </div>

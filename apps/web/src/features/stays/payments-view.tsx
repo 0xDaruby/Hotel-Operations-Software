@@ -30,7 +30,6 @@ export function PaymentsView({ payments, total, date, today }: PaymentsViewProps
           <p className="eyebrow">Payments received</p>
           <h2 id="payments-heading" className="payments-heading"><Wallet02Icon className="icon icon-lg icon-brand-action" aria-hidden="true" />{formatNaira(total)} recorded on {date}</h2>
         </div>
-        <p>Arrival and extension payments are recorded separately on the day money is received. Voided stays are excluded.</p>
       </div>
       <form className="payments-date" onSubmit={go}>
         <label className="inventory-field">

@@ -11,11 +11,11 @@ export function InventoryOverview({ inventory, summary }: { inventory: Inventory
   return (
     <div className="inventory-overview">
       <section className="metric-strip" aria-label="Inventory summary">
-        <div><span>Active rooms</span><strong>{summary.activeRooms}</strong><small>Permanent hotel inventory</small></div>
-        <div><span>Occupied rooms</span><strong>{summary.occupiedRooms}</strong><small>Live checked-in stays</small></div>
-        <div><span>Ready rooms</span><strong>{summary.readyRooms}</strong><small>Available for new arrivals</small></div>
-        <div><span>Inspection due</span><strong>{summary.inspectionDueRooms}</strong><small>Room conditions pending</small></div>
-        <div><span>Maintenance blocked</span><strong>{summary.maintenanceBlockedRooms}</strong><small>Open issues still active</small></div>
+        <div><span>Hotel rooms</span><strong>{summary.activeRooms}</strong></div>
+        <div><span>Occupied rooms</span><strong>{summary.occupiedRooms}</strong></div>
+        <div><span>Available rooms for new arrivals</span><strong>{summary.readyRooms}</strong></div>
+        <div><span>Inspection due (Pending)</span><strong>{summary.inspectionDueRooms}</strong></div>
+        <div><span>Maintenance blocked</span><strong>{summary.maintenanceBlockedRooms}</strong></div>
       </section>
       <section className="inventory-summary-panel">
         <div>

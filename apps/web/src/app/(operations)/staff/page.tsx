@@ -13,7 +13,6 @@ export default async function StaffManagementPage() {
           <p className="eyebrow">Owner access</p>
           <h2 id="staff-heading"><UserListIcon className="icon icon-lg" aria-hidden="true" />Hotel staff</h2>
         </div>
-        <p>Only the owner creates or manages staff access. Profiles remain tied to the authenticated hotel and the matching Supabase user.</p>
       </div>
 
       <div className="staff-list" aria-live="polite">

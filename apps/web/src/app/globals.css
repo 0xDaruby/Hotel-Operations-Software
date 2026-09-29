@@ -169,10 +169,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .button-secondary:hover { background: #eee3d3; }
 .inventory-overview { display: grid; gap: 24px; }
 .metric-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 22px 0; background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--card-radius); box-shadow: var(--card-shadow); }
-.metric-strip > div { display: grid; gap: 5px; min-width: 0; padding: 0 24px; border-right: 1px solid var(--border-subtle); }
+.metric-strip > div { display: grid; gap: 8px; min-width: 0; padding: 0 24px; border-right: 1px solid var(--border-subtle); }
 .metric-strip > div:last-child { border: 0; }
-.metric-strip span, .metric-strip small { color: var(--text-secondary); font-size: 11px; }
-.metric-strip strong { color: var(--deep-brown); font: 37px/1.1 var(--display); letter-spacing: -1.4px; }
+.metric-strip span, .metric-strip small { color: var(--text-secondary); font-size: 11px; line-height: 1.35; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; }
+.metric-strip strong { display: block; margin-top: 2px; color: var(--deep-brown); font: 37px/1.1 var(--display); letter-spacing: -1.4px; }
 .inventory-summary-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .7fr); gap: 24px; align-items: end; padding: 26px; background: #e0d1bb; border: 1px solid #c7b294; border-radius: var(--card-radius); }
 .inventory-summary-panel h2 { font-size: 26px; }
 .inventory-summary-panel p:not(.eyebrow) { max-width: 480px; margin-top: 8px; color: #5e4d3e; font-size: 12px; }

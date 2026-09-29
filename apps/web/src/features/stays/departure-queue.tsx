@@ -27,7 +27,7 @@ export function DepartureQueue({ stays, canRecord, now }: DepartureQueueProps) {
   if (!stays.length) {
     return (
       <div className="inventory-empty" role="status">
-        <h2>Nothing is due for departure</h2>
+        <h2>Nobody is due for departure</h2>
         <p>Active stays will appear here as their 24-hour deadlines approach.</p>
       </div>
     );
