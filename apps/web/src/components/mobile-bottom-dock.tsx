@@ -49,7 +49,7 @@ export function MobileBottomDock({ docked, overflow, onOpenMenu }: MobileBottomD
       })}
 
       {hasOverflow ? (
-        <button className="mobile-dock-item mobile-dock-more" onClick={onOpenMenu} type="button" aria-haspopup="dialog" aria-label="Open full menu">
+        <button className="mobile-dock-item mobile-dock-more" onClick={onOpenMenu} type="button" aria-label="Open full menu">
           <span className="mobile-dock-more-dots" aria-hidden="true">
             <i /><i /><i />
           </span>

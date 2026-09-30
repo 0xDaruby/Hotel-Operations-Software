@@ -276,6 +276,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .payments-table th, .payments-table td { padding: 10px 12px; }
 }
 
+@media (min-width: 761px) and (max-width: 780px) {
+  .login-page { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 420px) {
   .stay-facts { grid-template-columns: 1fr; }
 }
@@ -294,6 +298,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (max-width: 760px) {
   .app-shell { display: block; }
   .sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); height: 100dvh; padding: 24px 18px; transform: translateX(-102%); transition: transform .2s ease; box-shadow: 12px 0 40px #302a2330; }
+  /* Roles whose destinations all fit the mobile dock have no drawer on mobile. */
+  .sidebar-no-drawer { display: none; }
   .sidebar-open { transform: translateX(0); }
   .brand-row { padding: 0 5px 28px; }
   .menu-close { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; background: transparent; border: 0; border-radius: 7px; font-size: 25px; }
@@ -349,7 +355,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   --dock-icon-size: var(--icon-md);
   --dock-accent: var(--deep-brown);
   --dock-muted: var(--muted);
-  --dock-label-size: 11px;
+  --dock-label-size: 12px;
   --dock-indicator-size: 4px;
   --dock-transition: 200ms ease;
   --dock-shadow:
@@ -429,7 +435,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (max-width: 420px) {
   .mobile-dock { gap: 1px; padding: 6px; }
   .mobile-dock-item { min-height: 50px; padding-inline: 4px; }
-  .mobile-dock-label { font-size: 10px; }
 }
 
 @media (min-width: 761px) {

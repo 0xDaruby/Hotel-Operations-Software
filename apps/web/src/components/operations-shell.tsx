@@ -24,6 +24,10 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
   const items = navigation(profile.role);
   const current = items.find((item) => item.href === pathname) ?? items[0];
   const { docked, overflow } = getDockNavigation(profile.role);
+  // When every destination fits the mobile dock there is nothing left for the
+  // drawer to offer, so its mobile surfaces (drawer, Menu button, backdrop)
+  // are skipped. Desktop keeps the persistent sidebar for all roles.
+  const hasDrawerOverflow = overflow.length > 0;
   const initials = profile.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 
   async function signOut() {
@@ -36,7 +40,14 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
     <>
       <a className="skip-link" href="#main-content">Skip to workspace</a>
       <div className="app-shell">
-        <aside className={menuOpen ? 'sidebar sidebar-open' : 'sidebar'} aria-label="Hotel navigation">
+        <aside
+          className={[
+            'sidebar',
+            menuOpen && hasDrawerOverflow ? 'sidebar-open' : '',
+            hasDrawerOverflow ? '' : 'sidebar-no-drawer',
+          ].filter(Boolean).join(' ')}
+          aria-label="Hotel navigation"
+        >
           <div className="brand-row">
             <span className="brand-mark" aria-hidden="true">X</span>
             <span><strong>XYZ Hotel</strong><small>Operations desk</small></span>
@@ -55,12 +66,12 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
           </div>
         </aside>
 
-        {menuOpen ? <button className="nav-backdrop" aria-label="Close navigation" onClick={() => setMenuOpen(false)} type="button" /> : null}
+        {hasDrawerOverflow && menuOpen ? <button className="nav-backdrop" aria-label="Close navigation" onClick={() => setMenuOpen(false)} type="button" /> : null}
 
         <div className="workspace">
           <header className="topbar">
             <div className="hotel-context">
-              <button className="menu-button" onClick={() => setMenuOpen(true)} type="button">Menu</button>
+              {hasDrawerOverflow ? <button className="menu-button" onClick={() => setMenuOpen(true)} type="button">Menu</button> : null}
               <span className="hotel-symbol" aria-hidden="true"><Home04Icon className="icon icon-sm" /></span>
               <strong>Hotel operations</strong><span>/ Staff workspace</span>
             </div>
