@@ -116,9 +116,13 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .login-help { margin: 12px 0 30px; color: var(--muted); }
 .login-form { display: grid; gap: 18px; }
 .field { display: grid; gap: 7px; }
-.field span { font-size: 12px; font-weight: 600; }
+.field > span, .field > label { font-size: 12px; font-weight: 600; }
 .field input { width: 100%; min-height: 48px; padding: 11px 13px; color: var(--ink); background: #fffcf7; border: 1px solid #b9a793; border-radius: 7px; }
 .field input:focus { border-color: var(--deep-brown); }
+.password-input-control { position: relative; }
+.password-input-control input { padding-right: 52px; }
+.password-visibility-toggle { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--muted); background: transparent; border: 0; border-radius: 5px; }
+.password-visibility-toggle:hover { color: var(--ink); background: var(--surface-subtle); }
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 11px 16px; border: 1px solid var(--deep-brown); border-radius: 7px; font-size: 12px; font-weight: 700; }
 .button-primary { color: var(--paper); background: #715039; }
 .button-primary:hover { background: var(--deep-brown); }
