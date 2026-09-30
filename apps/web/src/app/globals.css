@@ -450,6 +450,26 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .icon-status-occupied { color: var(--status-occupied-fg); }
 .icon-brand-action { color: var(--brand-action); }
 .activity-dot { color: var(--brand-action); }
+.activity-browser { display: grid; gap: 24px; min-width: 0; }
+.activity-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.activity-count { color: var(--muted); font-size: 12px; }
+.activity-count strong { color: var(--ink); }
+.activity-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.activity-filter { min-height: 38px; padding: 7px 12px; color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; font-size: 11px; font-weight: 600; transition: background-color .15s, color .15s, border-color .15s; }
+.activity-filter:hover { color: var(--ink); background: var(--surface-subtle); }
+.activity-filter[aria-pressed="true"] { color: var(--paper); background: var(--deep-brown); border-color: var(--deep-brown); }
+.activity-groups { display: grid; gap: 24px; }
+.activity-day { min-width: 0; }
+.activity-day-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 0 9px; }
+.activity-day-heading h3 { font: 600 12px/1.4 var(--body); color: var(--ink); }
+.activity-day-heading span { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.activity-list { display: grid; }
+.activity-item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.activity-copy { display: grid; gap: 3px; min-width: 0; }
+.activity-copy > strong { color: var(--ink); font-size: 13px; font-weight: 650; }
+.activity-copy > p { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.activity-copy > small { color: var(--muted); font-size: 10px; }
+.activity-filter-empty { padding: 22px 0; color: var(--muted); border-top: 1px solid var(--line); font-size: 12px; }
 .staff-page h2 { display: flex; align-items: center; gap: 8px; }
 .payments-heading { display: flex; align-items: center; gap: 8px; }
 .inspect-action { gap: 7px; }
@@ -468,4 +488,18 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .maintenance-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 28px; align-items: start; }
 .maintenance-main { display: grid; gap: 20px; min-width: 0; }
 .maintenance-role-note { padding: 14px 16px; color: var(--text-secondary); background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 11px; line-height: 1.6; }
+
+@media (max-width: 760px) {
+  .activity-browser { gap: 18px; }
+  .activity-toolbar { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .activity-filters { width: 100%; gap: 5px; }
+  .activity-filter { min-height: 40px; padding-inline: 11px; }
+  .activity-groups { gap: 20px; }
+  .activity-item { gap: 9px; padding: 12px 0; }
+}
+
+@media (max-width: 420px) {
+  .activity-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .activity-filter { width: 100%; padding-inline: 7px; font-size: 10px; }
+}
 @media (max-width: 980px) { .maintenance-layout { grid-template-columns: 1fr; } }
