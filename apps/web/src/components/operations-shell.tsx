@@ -5,28 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { StaffProfile, StaffRole } from '@/features/auth/staff-profile';
 import { createClient } from '@/lib/supabase/client';
-import { BellDotIcon, Home04Icon, Hotel02Icon, HourglassOffIcon, RepairIcon, TaskDaily02Icon, UserCheck01Icon, UserListIcon, Wallet02Icon, type IconProps } from '@/components/icons';
+import { Home04Icon } from '@/components/icons';
+import { getDockNavigation, getNavigationForRole } from '@/components/navigation-config';
+import { MobileBottomDock } from '@/components/mobile-bottom-dock';
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon?: (props: IconProps) => ReactNode;
-  roles: readonly StaffRole[];
-  eyebrow: string;
-  subtitle: string;
-};
-
-const navigation: NavItem[] = [
-  { href: '/overview', label: 'Hotel Overview', icon: Home04Icon, roles: ['owner'], eyebrow: '', subtitle: '' },
-  { href: '/rooms', label: 'Room board', icon: Hotel02Icon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Every room, one truth', subtitle: 'Occupancy, readiness, and maintenance — together.' },
-  { href: '/stays', label: 'Guest stays', icon: UserCheck01Icon, roles: ['owner', 'receptionist'], eyebrow: 'Walk-in operations', subtitle: 'Arrivals, continuous stays, extensions, and departures.' },
-  { href: '/departure-due', label: 'Departure due', icon: HourglassOffIcon, roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
-  { href: '/inspections', label: 'Inspections', icon: TaskDaily02Icon, roles: ['owner', 'supervisor'], eyebrow: '', subtitle: '' },
-  { href: '/maintenance', label: 'Maintenance', icon: RepairIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Rooms needing attention', subtitle: 'See open issues and the rooms they block.' },
-  { href: '/payments', label: 'Payments', icon: Wallet02Icon, roles: ['owner'], eyebrow: 'Operational money view', subtitle: 'Staff-recorded payments grouped by the day received.' },
-  { href: '/activity', label: 'Activity', icon: BellDotIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
-  { href: '/staff', label: 'Staff', icon: UserListIcon, roles: ['owner'], eyebrow: 'Owner access', subtitle: 'Review hotel staff profiles and account access.' },
-];
+const navigation = getNavigationForRole;
 
 const roleLabels: Record<StaffRole, string> = {
   owner: 'Owner / Manager',
@@ -38,8 +21,9 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const items = navigation.filter((item) => item.roles.includes(profile.role));
-  const current = navigation.find((item) => item.href === pathname) ?? items[0];
+  const items = navigation(profile.role);
+  const current = items.find((item) => item.href === pathname) ?? items[0];
+  const { docked, overflow } = getDockNavigation(profile.role);
   const initials = profile.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 
   async function signOut() {
@@ -98,6 +82,12 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
           </main>
         </div>
       </div>
+
+      <MobileBottomDock
+        docked={docked}
+        overflow={overflow}
+        onOpenMenu={() => setMenuOpen(true)}
+      />
     </>
   );
 }
