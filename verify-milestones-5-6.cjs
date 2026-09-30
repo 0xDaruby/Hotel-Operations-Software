@@ -32,13 +32,18 @@ const inspectionFeature = read('apps/web/src/features/inspections/inspections.ts
 mustInclude(inspectionFeature, 'getInspectionQueue', 'inspection queue loader');
 const inspectionWorkspace = read('apps/web/src/features/inspections/inspection-workspace.tsx');
 mustInclude(inspectionWorkspace, 'Personally verified', 'inspection personal verification control');
-mustInclude(inspectionWorkspace, 'No inspection assignments', 'shared queue policy');
+mustInclude(inspectionWorkspace, 'This is a shared queue.', 'shared inspection queue');
+assert.doesNotMatch(
+  inspectionWorkspace,
+  /\b(?:take inspection|claim inspection|inspection assignments?|assigned to|being inspected by)\b/i,
+  'shared inspection queue must not expose claims or assignments',
+);
 
 const maintenanceFeature = read('apps/web/src/features/maintenance/maintenance.ts');
 mustInclude(maintenanceFeature, 'getMaintenanceIssues', 'maintenance loader');
 const maintenanceWorkspace = read('apps/web/src/features/maintenance/maintenance-workspace.tsx');
 mustInclude(maintenanceWorkspace, 'Report issue', 'maintenance report control');
-mustInclude(maintenanceWorkspace, 'does not approve cleanliness', 'maintenance separation notice');
+mustInclude(maintenanceWorkspace, 'approve room cleanliness', 'maintenance separation notice');
 
 const roomBoard = read('apps/web/src/features/inventory/room-board.tsx');
 mustInclude(roomBoard, 'maintenanceIssueCountByRoomId', 'room maintenance display');

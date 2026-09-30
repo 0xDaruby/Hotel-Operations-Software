@@ -276,6 +276,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .payments-table th, .payments-table td { padding: 10px 12px; }
 }
 
+@media (min-width: 761px) and (max-width: 780px) {
+  .login-page { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 420px) {
   .stay-facts { grid-template-columns: 1fr; }
 }
@@ -294,6 +298,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (max-width: 760px) {
   .app-shell { display: block; }
   .sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); height: 100dvh; padding: 24px 18px; transform: translateX(-102%); transition: transform .2s ease; box-shadow: 12px 0 40px #302a2330; }
+  /* Roles whose destinations all fit the mobile dock have no drawer on mobile. */
+  .sidebar-no-drawer { display: none; }
   .sidebar-open { transform: translateX(0); }
   .brand-row { padding: 0 5px 28px; }
   .menu-close { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; background: transparent; border: 0; border-radius: 7px; font-size: 25px; }
@@ -318,7 +324,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .login-brand h1 { font-size: 42px; letter-spacing: -2px; }
   .login-intro { margin-top: 18px; }
   .login-principle { display: none; }
-  .login-panel { place-items: start center; padding: 34px 24px 48px; }
+  .login-panel { place-items: start center; padding: 34px 24px calc(48px + 88px + env(safe-area-inset-bottom, 0px)); }
+  .content { padding: 28px 20px calc(22px + 96px + env(safe-area-inset-bottom, 0px)); }
 }
 
 @media (max-width: 420px) {
@@ -336,6 +343,104 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Mobile bottom dock — floating capsule navigation                    */
+/* ------------------------------------------------------------------ */
+.mobile-dock {
+  --dock-height: 72px;
+  --dock-radius: 9999px;
+  --dock-surface: var(--paper);
+  --dock-border: #d9cbbbcc;
+  --dock-icon-size: var(--icon-md);
+  --dock-accent: var(--deep-brown);
+  --dock-muted: var(--muted);
+  --dock-label-size: 12px;
+  --dock-indicator-size: 4px;
+  --dock-transition: 200ms ease;
+  --dock-shadow:
+    0 1px 2px #302a230a,
+    0 4px 8px #302a2312,
+    0 12px 28px #302a231f;
+
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: calc(100% - 24px);
+  max-width: 500px;
+  min-height: var(--dock-height);
+  padding: 8px 10px;
+  background: var(--dock-surface);
+  border: 1px solid var(--dock-border);
+  border-radius: var(--dock-radius);
+  box-shadow: var(--dock-shadow);
+}
+
+.mobile-dock-item {
+  position: relative;
+  display: flex;
+  flex: var(--dock-item-flex, 1 1 0);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 7px 6px;
+  color: var(--dock-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 24px;
+  font: 600 var(--dock-label-size)/1 var(--body);
+  text-decoration: none;
+  transition: background-color var(--dock-transition), color var(--dock-transition), transform var(--dock-transition);
+}
+.mobile-dock-item:hover { color: var(--ink); background: #302a230d; }
+.mobile-dock-item:active { transform: scale(.97); }
+.mobile-dock-icon { display: grid; place-items: center; }
+.mobile-dock-label {
+  max-width: 100%;
+  overflow: hidden;
+  letter-spacing: .1px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-dock-item-active,
+.mobile-dock-item-active:hover {
+  color: var(--dock-accent);
+  background: #57412f14;
+}
+.mobile-dock-item-active .mobile-dock-icon { color: var(--dock-accent); }
+
+.mobile-dock-indicator {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: var(--dock-indicator-size);
+  height: var(--dock-indicator-size);
+  margin-left: calc(var(--dock-indicator-size) / -2);
+  background: var(--dock-accent);
+  border-radius: 50%;
+}
+
+.mobile-dock-more-dots { display: flex; align-items: center; justify-content: center; gap: 3px; height: 20px; }
+.mobile-dock-more-dots i { width: 4px; height: 4px; background: currentColor; border-radius: 50%; }
+
+@media (max-width: 420px) {
+  .mobile-dock { gap: 1px; padding: 6px; }
+  .mobile-dock-item { min-height: 50px; padding-inline: 4px; }
+}
+
+@media (min-width: 761px) {
+  .mobile-dock { display: none; }
+}
+
 
 /* Milestones 5+6 — room board maintenance and inspection status */
 .status-danger { color: var(--status-danger-fg); background: var(--status-danger-bg); }
