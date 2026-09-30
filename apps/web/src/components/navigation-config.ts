@@ -29,7 +29,7 @@ export type NavigationEntry = {
  */
 export const navigation: NavigationEntry[] = [
   { href: '/overview', label: 'Hotel Overview', shortLabel: 'Overview', icon: Home04Icon, roles: ['owner'], eyebrow: '', subtitle: '' },
-  { href: '/rooms', label: 'Room board', shortLabel: 'Rooms', icon: Hotel02Icon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Every room, one truth', subtitle: 'Occupancy, readiness, and maintenance — together.' },
+  { href: '/rooms', label: 'Room board', shortLabel: 'Rooms', icon: Hotel02Icon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: '', subtitle: 'Occupancy, readiness, and maintenance — together.' },
   { href: '/stays', label: 'Guest stays', shortLabel: 'Stays', icon: UserCheck01Icon, roles: ['owner', 'receptionist'], eyebrow: 'Walk-in operations', subtitle: 'Arrivals, continuous stays, extensions, and departures.' },
   { href: '/departure-due', label: 'Departure due', shortLabel: 'Depart', icon: HourglassOffIcon, roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
   { href: '/inspections', label: 'Inspections', shortLabel: 'Inspect', icon: TaskDaily02Icon, roles: ['owner', 'supervisor'], eyebrow: '', subtitle: '' },

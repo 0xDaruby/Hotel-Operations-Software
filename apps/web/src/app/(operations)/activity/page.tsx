@@ -1,10 +1,18 @@
 import { requireStaffProfile } from '@/features/auth/staff-profile';
-import { formatActivityAction, getActivityContextLabel, getActivityFeed } from '@/features/activity/activity';
-import { BellDotIcon } from '@/components/icons';
+import { getActivityFeed } from '@/features/activity/activity';
+import { groupActivityEventsByDate } from '@/features/activity/activity-view';
+import { ActivityFeed } from '@/features/activity/activity-feed';
 
 export default async function ActivityPage() {
   await requireStaffProfile(['owner', 'receptionist', 'supervisor']);
   const events = await getActivityFeed();
+  const groups = groupActivityEventsByDate(events).map((group) => ({
+    ...group,
+    events: group.events.map((event) => ({
+      ...event,
+      formattedCreatedAt: new Date(event.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
+    })),
+  }));
 
   return (
     <section className="activity-page" aria-labelledby="activity-heading">
@@ -16,19 +24,7 @@ export default async function ActivityPage() {
       </div>
 
       {events.length ? (
-        <div className="activity-list" aria-live="polite">
-          {events.map((event) => (
-            <article className="activity-item" key={event.id}>
-              <BellDotIcon className="icon icon-md activity-dot" aria-hidden="true" />
-              <div className="activity-copy">
-                <strong>{formatActivityAction(event.action)}</strong>
-                <p>{getActivityContextLabel({ roomNumber: event.roomNumber, guestName: event.guestName })}</p>
-                <small>{event.actorName} · {new Date(event.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</small>
-                {event.reason ? <p className="activity-reason">Reason: {event.reason}</p> : null}
-              </div>
-            </article>
-          ))}
-        </div>
+        <ActivityFeed groups={groups} eventCount={events.length} />
       ) : (
         <div className="inventory-empty" role="status">
           <h2>No activity yet</h2>

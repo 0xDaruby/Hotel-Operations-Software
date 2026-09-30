@@ -11,38 +11,6 @@ export type ActivityEvent = {
   details: Record<string, unknown> | null;
 };
 
-export function formatActivityAction(action: string) {
-  const map: Record<string, string> = {
-    'stay.arrived': 'Arrival recorded',
-    'stay.extended': 'Stay extended',
-    'stay.departed': 'Departure confirmed',
-    'stay.moved': 'Room moved',
-    'stay.corrected': 'Stay corrected',
-    'stay.voided': 'Stay voided',
-    'inspection.approved': 'Inspection approved',
-    'inspection.attention': 'Inspection flagged',
-    'inspection.access_blocked': 'Inspection blocked',
-    'maintenance.reported': 'Maintenance reported',
-    'maintenance.resolved': 'Maintenance resolved',
-  };
-
-  if (map[action]) return map[action];
-  return action
-    .split('.')
-    .map((part) => part.replace(/_/g, ' '))
-    .join(' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-export function getActivityContextLabel(input: { roomNumber?: string | null; guestName?: string | null }) {
-  const room = input.roomNumber?.trim();
-  const guest = input.guestName?.trim();
-  if (room && guest) return `Room ${room} · ${guest}`;
-  if (room) return `Room ${room}`;
-  if (guest) return guest;
-  return 'General record';
-}
-
 export async function getActivityFeed(limit = 50): Promise<ActivityEvent[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
