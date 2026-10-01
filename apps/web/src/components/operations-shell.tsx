@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { StaffProfile, StaffRole } from '@/features/auth/staff-profile';
+import { getProfileAvatarInitial } from '@/features/auth/profile-avatar';
 import { createClient } from '@/lib/supabase/client';
 import { Home04Icon } from '@/components/icons';
 import { getDockNavigation, getNavigationForRole } from '@/components/navigation-config';
@@ -28,7 +29,7 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
   // drawer to offer, so its mobile surfaces (drawer, Menu button, backdrop)
   // are skipped. Desktop keeps the persistent sidebar for all roles.
   const hasDrawerOverflow = overflow.length > 0;
-  const initials = profile.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+  const avatarInitial = getProfileAvatarInitial(profile.role);
 
   async function signOut() {
     await createClient().auth.signOut();
@@ -73,10 +74,10 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
             <div className="hotel-context">
               {hasDrawerOverflow ? <button className="menu-button" onClick={() => setMenuOpen(true)} type="button">Menu</button> : null}
               <span className="hotel-symbol" aria-hidden="true"><Home04Icon className="icon icon-sm" /></span>
-              <strong>Hotel operations</strong><span>/ Staff workspace</span>
+              <strong>Hotel Operations</strong><span>/ Staff workspace</span>
             </div>
             <div className="profile-summary">
-              <span className="profile-avatar" aria-hidden="true">{initials}</span>
+              <span className="profile-avatar" aria-hidden="true">{avatarInitial}</span>
               <span className="profile-copy"><strong>{profile.displayName}</strong><small>{roleLabels[profile.role]}</small></span>
               <button className="sign-out" onClick={signOut} type="button">Sign out</button>
             </div>

@@ -19,7 +19,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="login-kicker">XYZ Hotel / Operations</p>
           <h1>The hotel day,<br />kept in view.</h1>
           <p className="login-intro">One trusted workspace for rooms, stays, inspections, maintenance, and handovers.</p>
-          <div className="login-principle"><i aria-hidden="true" /><span>Every action is tied to the staff member who performed it.</span></div>
         </div>
       </section>
       <section className="login-panel">
