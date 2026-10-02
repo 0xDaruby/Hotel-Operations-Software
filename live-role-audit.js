@@ -38,6 +38,24 @@ function formBody(obj) {
   return new URLSearchParams(obj).toString();
 }
 
+function lagosDate(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Lagos',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function assertRecentDatabaseTime(check, timestamp, startedAt) {
+  const value = Date.parse(timestamp);
+  if (!Number.isFinite(value) || value < startedAt - 60_000 || value > Date.now() + 60_000) {
+    throw new Error(`LIVE TIME SECURITY DEFECT: ${check} stored ${timestamp} after a forged p_now.`);
+  }
+}
+
 async function createAccount(role, hotelId) {
   const email = `rolecheck-${role}-${crypto.randomUUID().slice(0, 8)}@example.com`;
   const password = `TestPass!${Math.floor(100000 + Math.random() * 900000)}`;
@@ -134,6 +152,99 @@ function assertRoleGuard(check, response) {
   }
 }
 
+async function auditInventoryAccess(accounts, category, room, failures) {
+  const targets = [
+    { role: 'anon', token: null },
+    ...['owner', 'receptionist', 'supervisor'].map((role) => ({ role, token: accounts[role].token })),
+  ];
+
+  for (const target of targets) {
+    const headers = { apikey: anonKey, Accept: 'application/json' };
+    if (target.token) headers.Authorization = `Bearer ${target.token}`;
+    const [categories, rooms] = await Promise.all([
+      fetchJson(`${baseUrl}/rest/v1/room_categories?select=id&limit=1`, { headers }),
+      fetchJson(`${baseUrl}/rest/v1/rooms?select=id&limit=1`, { headers }),
+    ]);
+    const assertReadable = target.role !== 'anon';
+    const assertRead = assertReadable ? assertReadAvailable : assertReadDeniedOrEmpty;
+    assertRead(`${target.role}->room_categories SELECT`, categories, failures);
+    assertRead(`${target.role}->rooms SELECT`, rooms, failures);
+    console.log(JSON.stringify({
+      check: `${target.role}->inventory SELECT`,
+      roomCategories: { status: categories.status, rows: Array.isArray(categories.json) ? categories.json.length : null },
+      rooms: { status: rooms.status, rows: Array.isArray(rooms.json) ? rooms.json.length : null },
+    }, null, 2));
+
+    const checks = [
+      {
+        table: 'room_categories',
+        id: category.id,
+        label: `${target.role}->room_categories`,
+        updateBody: { daily_rate: Number(category.daily_rate) },
+        insertBody: category,
+      },
+      {
+        table: 'rooms',
+        id: room.id,
+        label: `${target.role}->rooms`,
+        updateBody: { room_number: room.room_number },
+        insertBody: room,
+      },
+    ];
+
+    for (const check of checks) {
+      const update = await fetchJson(`${baseUrl}/rest/v1/${check.table}?id=eq.${check.id}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify(check.updateBody),
+      });
+      assertDenied(`${check.label} UPDATE`, update, failures);
+
+      const insert = await fetchJson(`${baseUrl}/rest/v1/${check.table}`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify(check.insertBody),
+      });
+      if (insert.status !== 401 && insert.status !== 403) {
+        failures.push(`${check.label} INSERT was not denied (HTTP ${insert.status}; duplicate key is not authorization denial).`);
+      }
+
+      const deletion = await fetchJson(`${baseUrl}/rest/v1/${check.table}?id=eq.00000000-0000-0000-0000-000000000000`, {
+        method: 'DELETE',
+        headers: { ...headers, Prefer: 'return=representation' },
+      });
+      assertDenied(`${check.label} DELETE`, deletion, failures);
+
+      console.log(JSON.stringify({
+        check: check.label,
+        updateStatus: update.status,
+        insertStatus: insert.status,
+        deleteStatus: deletion.status,
+      }, null, 2));
+    }
+  }
+}
+
+function assertReadDeniedOrEmpty(check, response, failures) {
+  const denied = response.status === 401 || response.status === 403;
+  const empty = response.ok && Array.isArray(response.json) && response.json.length === 0;
+  if (!denied && !empty) {
+    failures.push(`${check} returned rows: ${JSON.stringify({ status: response.status, body: response.json || response.text })}`);
+  }
+}
+
+function assertReadAvailable(check, response, failures) {
+  if (!response.ok || !Array.isArray(response.json) || response.json.length === 0) {
+    failures.push(`${check} was not available: ${JSON.stringify({ status: response.status, body: response.json || response.text })}`);
+  }
+}
+
+function assertDenied(check, response, failures) {
+  if (response.status !== 401 && response.status !== 403) {
+    failures.push(`${check} was not denied: ${JSON.stringify({ status: response.status, body: response.json || response.text })}`);
+  }
+}
+
 async function deleteById(path, id) {
   if (!id) return;
   const response = await fetchJson(`${baseUrl}${path}${id}`, {
@@ -200,7 +311,7 @@ async function audit(accounts, testData) {
     console.log(JSON.stringify({ event: 'created_account', role }, null, 2));
   }
 
-  const roomRes = await fetchJson(`${baseUrl}/rest/v1/rooms?select=id,room_number,category_id&active=eq.true`, {
+  const roomRes = await fetchJson(`${baseUrl}/rest/v1/rooms?select=*&active=eq.true`, {
     method: 'GET',
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
   });
@@ -240,7 +351,7 @@ async function audit(accounts, testData) {
     throw new Error('No ready room available for the valid arrival test.');
   }
 
-  const catRes = await fetchJson(`${baseUrl}/rest/v1/room_categories?select=id,daily_rate&id=eq.${readyRoom.category_id}`, {
+  const catRes = await fetchJson(`${baseUrl}/rest/v1/room_categories?select=*&id=eq.${readyRoom.category_id}`, {
     method: 'GET',
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
   });
@@ -249,7 +360,11 @@ async function audit(accounts, testData) {
     throw new Error(`Failed to load category rate: ${catRes.text}`);
   }
 
-  const dailyRate = Number(catRes.json[0].daily_rate);
+  const category = catRes.json[0];
+  const dailyRate = Number(category.daily_rate);
+
+  testData.securityFailures = [];
+  await auditInventoryAccess(accounts, category, readyRoom, testData.securityFailures);
 
   console.log('\n=== blocked calls ===');
   const blockedCalls = [
@@ -353,13 +468,15 @@ async function audit(accounts, testData) {
   }, null, 2));
 
   console.log('\n=== valid role actions ===');
+  const arrivalStartedAt = Date.now();
+  const forgedNow = '2000-01-01T00:00:00.000Z';
   const validArrival = await invokeRpc(accounts.receptionist.token, 'record_arrival', {
     p_room_id: readyRoom.id,
     p_guest_name: 'Receptionist valid test',
     p_guest_phone: '08011111111',
     p_paid_days: 1,
     p_expected_amount: dailyRate,
-    p_now: new Date().toISOString(),
+    p_now: forgedNow,
   });
   if (!validArrival.ok || typeof validArrival.json !== 'string') {
     throw new Error(`Legitimate receptionist action failed: ${validArrival.text}`);
@@ -367,33 +484,95 @@ async function audit(accounts, testData) {
   testData.stayId = validArrival.json;
   console.log(JSON.stringify({ check: 'receptionist->record_arrival', status: validArrival.status, ok: validArrival.ok, body: validArrival.json || validArrival.text }, null, 2));
 
-  const reqInsert = await fetchJson(`${baseUrl}/rest/v1/inspection_requirements`, {
-    method: 'POST',
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify([
-      {
-        hotel_id: hotelId,
-        room_id: readyRoom.id,
-        trigger: 'daily',
-        status: 'pending',
-        due_at: new Date().toISOString(),
-        inspection_day: new Date().toISOString().slice(0, 10),
-      },
-    ]),
-  });
-
-  if (!reqInsert.ok || !Array.isArray(reqInsert.json) || reqInsert.json.length === 0) {
-    throw new Error(`Unable to create inspection requirement: ${reqInsert.text}`);
+  const [createdStay, initialPayment, arrivalEvent] = await Promise.all([
+    fetchJson(`${baseUrl}/rest/v1/stays?id=eq.${testData.stayId}&select=arrival_at`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    }),
+    fetchJson(`${baseUrl}/rest/v1/payment_records?stay_id=eq.${testData.stayId}&kind=eq.initial&select=received_on,created_at`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    }),
+    fetchJson(`${baseUrl}/rest/v1/activity_events?stay_id=eq.${testData.stayId}&action=eq.stay.arrived&select=created_at`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    }),
+  ]);
+  if (!createdStay.ok || !createdStay.json?.[0] || !initialPayment.ok || !initialPayment.json?.[0] || !arrivalEvent.ok || !arrivalEvent.json?.[0]) {
+    throw new Error('Unable to read back arrival timestamps for the forged-time regression check.');
+  }
+  try {
+    assertRecentDatabaseTime('stay.arrival_at', createdStay.json[0].arrival_at, arrivalStartedAt);
+    assertRecentDatabaseTime('payment_records.created_at', initialPayment.json[0].created_at, arrivalStartedAt);
+    assertRecentDatabaseTime('activity_events.created_at', arrivalEvent.json[0].created_at, arrivalStartedAt);
+    if (initialPayment.json[0].received_on !== lagosDate(new Date(initialPayment.json[0].created_at))) {
+      throw new Error(`LIVE TIME SECURITY DEFECT: received_on ${initialPayment.json[0].received_on} does not match the database-created payment's Africa/Lagos day.`);
+    }
+    console.log(JSON.stringify({ check: 'forged-p_now->arrival-and-payment-use-database-time', status: 'passed' }, null, 2));
+  } catch (error) {
+    testData.timeRegressionError = error.message;
+    console.error(error.message);
   }
 
-  const requirementId = reqInsert.json[0].id;
+  const extensionStartedAt = Date.now();
+  const extension = await invokeRpc(accounts.receptionist.token, 'extend_stay', {
+    p_stay_id: testData.stayId,
+    p_added_days: 1,
+    p_expected_amount: dailyRate,
+    p_expected_version: 1,
+    p_now: forgedNow,
+  });
+  if (!extension.ok) throw new Error(`Valid extension failed: ${extension.text}`);
+  const extensionRows = await fetchJson(`${baseUrl}/rest/v1/payment_records?stay_id=eq.${testData.stayId}&kind=eq.extension&select=received_on,created_at`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+  });
+  const extensionEvent = await fetchJson(`${baseUrl}/rest/v1/activity_events?stay_id=eq.${testData.stayId}&action=eq.stay.extended&select=created_at`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+  });
+  if (!extensionRows.ok || !extensionRows.json?.[0] || !extensionEvent.ok || !extensionEvent.json?.[0]) {
+    throw new Error('Unable to read back extension timestamps for the forged-time regression check.');
+  }
+  try {
+    assertRecentDatabaseTime('extension payment created_at', extensionRows.json[0].created_at, extensionStartedAt);
+    assertRecentDatabaseTime('stay.extended activity created_at', extensionEvent.json[0].created_at, extensionStartedAt);
+    if (extensionRows.json[0].received_on !== lagosDate(new Date(extensionRows.json[0].created_at))) {
+      throw new Error(`LIVE TIME SECURITY DEFECT: extension received_on ${extensionRows.json[0].received_on} does not match the database-created payment's Africa/Lagos day.`);
+    }
+    console.log(JSON.stringify({ check: 'forged-p_now->extension-payment-and-activity-use-database-time', status: 'passed' }, null, 2));
+  } catch (error) {
+    testData.timeRegressionError = testData.timeRegressionError ?? error.message;
+    console.error(error.message);
+  }
+
+  const departureStartedAt = Date.now();
+  const validDeparture = await invokeRpc(accounts.receptionist.token, 'confirm_departure', {
+    p_stay_id: testData.stayId,
+    p_expected_version: 2,
+    p_now: forgedNow,
+  });
+  if (!validDeparture.ok) throw new Error(`Legitimate receptionist departure failed: ${validDeparture.text}`);
+  const [departedStay, departureEvent, departureRequirements] = await Promise.all([
+    fetchJson(`${baseUrl}/rest/v1/stays?id=eq.${testData.stayId}&select=status,departed_at`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    }),
+    fetchJson(`${baseUrl}/rest/v1/activity_events?stay_id=eq.${testData.stayId}&action=eq.stay.departed&select=created_at`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    }),
+    fetchJson(`${baseUrl}/rest/v1/inspection_requirements?room_id=eq.${readyRoom.id}&trigger=eq.departure&status=eq.pending&select=id,due_at,created_at`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    }),
+  ]);
+  if (!departedStay.ok || !departedStay.json?.[0] || !departureEvent.ok || !departureEvent.json?.[0]
+    || !departureRequirements.ok || !departureRequirements.json?.[0]) {
+    throw new Error('Unable to read back confirmed departure and its generated inspection requirement.');
+  }
+  if (departedStay.json[0].status !== 'departed') {
+    throw new Error(`Departure did not end the stay: ${departedStay.json[0].status}`);
+  }
+  assertRecentDatabaseTime('stay.departed_at', departedStay.json[0].departed_at, departureStartedAt);
+  assertRecentDatabaseTime('stay.departed activity created_at', departureEvent.json[0].created_at, departureStartedAt);
+  assertRecentDatabaseTime('departure inspection due_at', departureRequirements.json[0].due_at, departureStartedAt);
+
+  const requirementId = departureRequirements.json[0].id;
   testData.requirementId = requirementId;
+  console.log(JSON.stringify({ check: 'receptionist->confirm_departure', status: validDeparture.status, ok: validDeparture.ok }, null, 2));
   const validSubmit = await invokeRpc(accounts.supervisor.token, 'submit_inspection', {
     p_requirement_id: requirementId,
     p_outcome: 'approved',
@@ -426,6 +605,11 @@ async function audit(accounts, testData) {
     throw new Error(`Legitimate owner maintenance resolution failed: ${ownerResolve.text}`);
   }
   console.log(JSON.stringify({ check: 'owner->resolve_maintenance_issue', status: ownerResolve.status, ok: ownerResolve.ok, body: ownerResolve.json || ownerResolve.text }, null, 2));
+
+  if (testData.timeRegressionError) testData.securityFailures.push(testData.timeRegressionError);
+  if (testData.securityFailures.length) {
+    throw new Error(`Security audit failures:\n- ${testData.securityFailures.join('\n- ')}`);
+  }
 }
 
 async function main() {
