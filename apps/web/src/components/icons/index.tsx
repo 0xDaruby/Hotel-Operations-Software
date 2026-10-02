@@ -111,3 +111,25 @@ export function UserCheck01Icon({ size = 24, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function Menu02Icon({ size = 24, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5">
+        <path d="M4 5L16 5" />
+        <path d="M4 12L20 12" />
+        <path d="M4 19L12 19" />
+      </g>
+    </svg>
+  );
+}
+
+export function XIcon({ size = 24, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5">
+        <path d="M18 6L12 12M12 12L6 18M12 12L18 18M12 12L6 6" />
+      </g>
+    </svg>
+  );
+}

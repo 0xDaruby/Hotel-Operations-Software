@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { XIcon } from '@/components/icons';
 
 type DialogProps = {
   open: boolean;
@@ -23,7 +24,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
     <dialog ref={ref} className="ops-dialog" onClose={onClose} aria-label={title}>
       <div className="ops-dialog-head">
         <h3>{title}</h3>
-        <button type="button" className="ops-dialog-close" onClick={onClose}>Close</button>
+        <button type="button" className="ops-dialog-close" onClick={onClose} aria-label="Close"><XIcon className="icon icon-md" aria-hidden="true" /></button>
       </div>
       <div className="ops-dialog-body">{children}</div>
     </dialog>

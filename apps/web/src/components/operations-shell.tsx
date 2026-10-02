@@ -6,7 +6,7 @@ import { useState, type ReactNode } from 'react';
 import type { StaffProfile, StaffRole } from '@/features/auth/staff-profile';
 import { getProfileAvatarInitial } from '@/features/auth/profile-avatar';
 import { createClient } from '@/lib/supabase/client';
-import { Home04Icon } from '@/components/icons';
+import { Home04Icon, Menu02Icon, XIcon } from '@/components/icons';
 import { getDockNavigation, getNavigationForRole } from '@/components/navigation-config';
 import { MobileBottomDock } from '@/components/mobile-bottom-dock';
 
@@ -52,7 +52,7 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
           <div className="brand-row">
             <span className="brand-mark" aria-hidden="true">X</span>
             <span><strong>XYZ Hotel</strong><small>Operations desk</small></span>
-              <button className="menu-close" onClick={() => setMenuOpen(false)} type="button">Close</button>
+              <button className="menu-close" onClick={() => setMenuOpen(false)} type="button" aria-label="Close"><XIcon className="icon icon-md" aria-hidden="true" /></button>
           </div>
           <p className="nav-heading">Workspace</p>
           <nav className="main-nav" aria-label="Main navigation">
@@ -72,7 +72,7 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
         <div className="workspace">
           <header className="topbar">
             <div className="hotel-context">
-              {hasDrawerOverflow ? <button className="menu-button" onClick={() => setMenuOpen(true)} type="button">Menu</button> : null}
+              {hasDrawerOverflow ? <button className="menu-button" onClick={() => setMenuOpen(true)} type="button" aria-label="Open menu"><Menu02Icon className="icon icon-md" aria-hidden="true" /></button> : null}
               <span className="hotel-symbol" aria-hidden="true"><Home04Icon className="icon icon-sm" /></span>
               <strong>Hotel Operations</strong><span>/ Staff workspace</span>
             </div>

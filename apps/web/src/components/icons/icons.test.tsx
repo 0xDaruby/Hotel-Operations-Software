@@ -7,11 +7,13 @@ import {
   Home04Icon,
   Hotel02Icon,
   HourglassOffIcon,
+  Menu02Icon,
   RepairIcon,
   TaskDaily02Icon,
   UserListIcon,
   UserCheck01Icon,
   Wallet02Icon,
+  XIcon,
 } from './index';
 
 const icons = [
@@ -19,11 +21,13 @@ const icons = [
   Home04Icon,
   Hotel02Icon,
   HourglassOffIcon,
+  Menu02Icon,
   RepairIcon,
   TaskDaily02Icon,
   UserListIcon,
   UserCheck01Icon,
   Wallet02Icon,
+  XIcon,
 ];
 
 test('shared hotel icons expose the normalized SVG contract', () => {
