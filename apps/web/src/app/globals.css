@@ -79,7 +79,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .hotel-context { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .hotel-context strong { font-weight: 600; }
 .hotel-context > span:last-child { color: var(--muted); }
-.hotel-symbol { display: grid; place-items: center; width: 28px; height: 28px; color: var(--deep-brown); border: 1px solid var(--line); border-radius: 50%; }
+.hotel-symbol { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 auto; color: var(--deep-brown); border: 1px solid var(--line); border-radius: 50%; }
 .profile-summary { display: flex; align-items: center; gap: 10px; padding-left: 20px; border-left: 1px solid var(--line); }
 .profile-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; color: var(--paper); background: var(--deep-brown); border-radius: 50%; font-size: 11px; font-weight: 700; letter-spacing: .4px; }
 .profile-copy { display: grid; min-width: 0; line-height: 1.25; }
@@ -149,6 +149,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .animated-dropdown-option:last-child { border-bottom: 0; }
 .animated-dropdown-option:hover, .animated-dropdown-option:focus-visible, .animated-dropdown-option-selected { color: var(--brand-action); background: var(--surface-subtle); outline: 0; }
 .inventory-search { min-width: min(100%, 220px); }
+.room-state-filters { display: flex; flex-wrap: wrap; align-items: center; align-self: end; gap: 6px; min-height: 42px; }
+.room-state-chip { min-height: 34px; padding: 6px 12px; color: var(--text-secondary); background: var(--surface); border: 1px solid #b9a793; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background-color .15s, color .15s, border-color .15s; }
+.room-state-chip:hover { color: var(--text-primary); background: var(--surface-subtle); }
+.room-state-chip[aria-pressed="true"] { color: var(--paper); background: var(--deep-brown); border-color: var(--deep-brown); }
 .text-button { min-height: 42px; padding: 8px; color: #64462f; background: transparent; border: 0; border-radius: 6px; font-size: 12px; font-weight: 700; }
 .text-button:hover { background: #8460440d; }
 .room-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -309,8 +313,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .menu-close { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; background: transparent; border: 0; border-radius: 7px; font-size: 25px; }
   .menu-button { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; border: 1px solid var(--line); border-radius: 7px; }
   .nav-backdrop { position: fixed; inset: 0; display: block; width: 100%; height: 100%; padding: 0; background: #302a236b; border: 0; z-index: 20; }
-  .topbar { min-height: 68px; padding: 10px 18px; }
-  .hotel-symbol { display: none; }
+  .topbar { min-height: 68px; gap: 12px; padding: 10px 18px; }
+  .hotel-context { gap: 8px; }
   .profile-summary { gap: 6px; padding-left: 0; border: 0; }
   .sign-out { margin-left: 0; }
   .content { padding: 28px 20px 22px; }
@@ -318,6 +322,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .inventory-intro { align-items: start; flex-direction: column; gap: 9px; }
   .room-toolbar { align-items: stretch; }
   .inventory-field, .inventory-search { flex: 1 1 145px; }
+  .inventory-state-field { flex: 1 1 100%; }
+  .room-state-filters { gap: 5px; }
+  .room-state-chip { min-height: 40px; padding-inline: 11px; }
   .metric-strip { grid-template-columns: 1fr; padding: 0; }
   .metric-strip > div { padding: 18px 20px; border-right: 0; border-bottom: 1px solid var(--border-subtle); }
   .metric-strip > div:last-child { border-bottom: 0; }
@@ -333,12 +340,16 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 @media (max-width: 420px) {
+  .topbar { gap: 8px; padding-inline: 12px; }
+  .hotel-context { gap: 6px; }
   .hotel-context strong { font-size: 11px; }
   .profile-avatar { width: 32px; height: 32px; }
   .content { padding-inline: 16px; }
   .page-heading h1 { font-size: 34px; }
   .foundation-panel { display: grid; gap: 14px; }
   .room-grid { grid-template-columns: 1fr; }
+  .room-state-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .room-state-chip { width: 100%; }
   .footer { flex-wrap: wrap; }
   .login-brand h1 { font-size: 38px; }
   .login-card h2 { font-size: 34px; }

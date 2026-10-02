@@ -26,33 +26,40 @@ export function RoomBoard({
   inspectionDueRoomIds,
   maintenanceIssueCountByRoomId,
 }: RoomBoardProps) {
-  const occupied = new Set(occupiedRoomIds);
-  const inspectionDue = new Set(inspectionDueRoomIds);
+  const occupied = useMemo(() => new Set(occupiedRoomIds), [occupiedRoomIds]);
+  const inspectionDue = useMemo(() => new Set(inspectionDueRoomIds), [inspectionDueRoomIds]);
   const [categoryId, setCategoryId] = useState('all');
-  const [floor, setFloor] = useState('all');
   const [query, setQuery] = useState('');
-  const floors = [...new Set(rooms.map((room) => room.floor))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const [stateFilters, setStateFilters] = useState<string[]>([]);
   const categoryOptions = [
     { name: 'All categories', value: 'all' },
     ...categories.map((category) => ({ name: category.name, value: category.id })),
   ];
-  const floorOptions = [
-    { name: 'All floors', value: 'all' },
-    ...floors.map((item) => ({ name: item, value: item })),
+  const stateOptions = [
+    { label: 'Occupied', value: 'occupied' },
+    { label: 'Unoccupied', value: 'unoccupied' },
+    { label: 'Inspection due', value: 'inspection' },
+    { label: 'Maintenance', value: 'maintenance' },
   ];
   const visibleRooms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return rooms.filter((room) =>
-      (categoryId === 'all' || room.categoryId === categoryId)
-      && (floor === 'all' || room.floor === floor)
-      && (!normalizedQuery || room.number.toLowerCase().includes(normalizedQuery)),
-    );
-  }, [categoryId, floor, query, rooms]);
-  const filtersActive = categoryId !== 'all' || floor !== 'all' || query.trim() !== '';
+    return rooms.filter((room) => {
+      const isOccupied = occupied.has(room.id);
+      const matchesState = stateFilters.length === 0
+        || (stateFilters.includes('occupied') && isOccupied)
+        || (stateFilters.includes('unoccupied') && !isOccupied)
+        || (stateFilters.includes('inspection') && inspectionDue.has(room.id))
+        || (stateFilters.includes('maintenance') && (maintenanceIssueCountByRoomId[room.id] ?? 0) > 0);
+      return (categoryId === 'all' || room.categoryId === categoryId)
+        && matchesState
+        && (!normalizedQuery || room.number.toLowerCase().includes(normalizedQuery));
+    });
+  }, [categoryId, inspectionDue, maintenanceIssueCountByRoomId, occupied, query, rooms, stateFilters]);
+  const filtersActive = categoryId !== 'all' || stateFilters.length > 0 || query.trim() !== '';
 
   function clearFilters() {
     setCategoryId('all');
-    setFloor('all');
+    setStateFilters([]);
     setQuery('');
   }
 
@@ -75,15 +82,26 @@ export function RoomBoard({
             aria-label="Filter by category"
           />
         </label>
-        <label className="inventory-field">
-          <span>Floor</span>
-          <AnimatedDropdown
-            items={floorOptions}
-            selectedValue={floor}
-            onSelect={(item) => setFloor(item.value ?? 'all')}
-            aria-label="Filter by floor"
-          />
-        </label>
+        <div className="inventory-field inventory-state-field">
+          <span>State</span>
+          <div className="room-state-filters" role="group" aria-label="Filter rooms by state">
+            {stateOptions.map((option) => (
+              <button
+                aria-pressed={stateFilters.includes(option.value)}
+                className="room-state-chip"
+                key={option.value}
+                onClick={() => setStateFilters((current) => (
+                  current.includes(option.value)
+                    ? current.filter((item) => item !== option.value)
+                    : [...current, option.value]
+                ))}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <label className="inventory-field inventory-search">
           <span>Find a room</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. 301" type="search" />
