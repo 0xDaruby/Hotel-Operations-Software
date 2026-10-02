@@ -4,7 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { MaintenanceIssueType } from './maintenance';
 
-export type MaintenanceActionResult = { ok: boolean; error?: string };
+export type MaintenanceActionResult = {
+  ok: boolean;
+  error?: string;
+  alreadyResolved?: { resolvedBy: string; resolvedAt: string };
+};
 
 function cleanMessage(message: string) {
   return message.replace(/^\w+:\s*/, '').trim() || 'The maintenance update could not be completed.';
@@ -12,6 +16,7 @@ function cleanMessage(message: string) {
 
 function revalidateMaintenanceViews() {
   revalidatePath('/maintenance');
+  revalidatePath('/(operations)', 'layout');
   revalidatePath('/overview');
   revalidatePath('/rooms');
   revalidatePath('/stays');
@@ -48,8 +53,30 @@ export async function resolveMaintenanceIssueAction(input: {
   });
 
   if (error) {
-    // Refresh so a stale or already-resolved issue shows its latest state on reopen.
     revalidatePath('/maintenance');
+    revalidatePath('/(operations)', 'layout');
+    revalidatePath('/overview');
+    if (error.message.toLowerCase().includes('already resolved')) {
+      const { data: issue } = await supabase
+        .from('maintenance_issues')
+        .select('status, resolved_by, resolved_at')
+        .eq('id', input.issueId)
+        .maybeSingle();
+      if (issue?.status === 'resolved' && issue.resolved_by && issue.resolved_at) {
+        const { data: profile } = await supabase
+          .from('staff_profiles')
+          .select('display_name')
+          .eq('user_id', issue.resolved_by)
+          .maybeSingle();
+        return {
+          ok: false,
+          alreadyResolved: {
+            resolvedBy: profile?.display_name ?? 'Another staff member',
+            resolvedAt: issue.resolved_at,
+          },
+        };
+      }
+    }
     return { ok: false, error: cleanMessage(error.message) };
   }
   revalidateMaintenanceViews();

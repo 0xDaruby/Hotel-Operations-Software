@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { RepairIcon } from '@/components/icons';
 import { Dialog } from '@/components/dialog';
 import { formatDateTime } from '@/features/stays/format';
+import { formatLagosDateTime } from '@/features/inventory/owner-overview-time';
 import { reportMaintenanceIssueAction, resolveMaintenanceIssueAction } from './actions';
 import type { MaintenanceIssue, MaintenanceIssueType, MaintenanceRoom } from './maintenance';
 
@@ -142,6 +143,7 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
 function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClose: () => void }) {
   const [resolutionDetail, setResolutionDetail] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [alreadyResolved, setAlreadyResolved] = useState<{ resolvedBy: string; resolvedAt: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const canSubmit = resolutionDetail.trim() !== '' && !pending;
 
@@ -149,6 +151,7 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
     event.preventDefault();
     if (!canSubmit) return;
     setError(null);
+    setAlreadyResolved(null);
     startTransition(async () => {
       const result = await resolveMaintenanceIssueAction({
         issueId: issue.id,
@@ -156,6 +159,7 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
         expectedVersion: issue.version,
       });
       if (result.ok) onClose();
+      else if (result.alreadyResolved) setAlreadyResolved(result.alreadyResolved);
       else setError(result.error ?? 'The maintenance issue could not be resolved.');
     });
   }
@@ -163,8 +167,11 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
   return (
     <Dialog open title={`Resolve room ${issue.roomNumber} issue`} onClose={onClose}>
       <form className="stay-dialog-form" onSubmit={submit}>
+        {alreadyResolved ? (
+          <p className="form-notice" role="status">Resolved by {alreadyResolved.resolvedBy} on {formatLagosDateTime(alreadyResolved.resolvedAt)}.</p>
+        ) : null}
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        <p className="dialog-note">This resolves only this maintenance issue. It does not change an active stay or approve room cleanliness.</p>
+        <p className="dialog-note">This resolves only this issue. Other open issues keep {issue.roomNumber} blocked, and this does not approve room cleanliness.</p>
         <label className="inventory-field">
           <span>Resolution detail</span>
           <textarea value={resolutionDetail} onChange={(event) => setResolutionDetail(event.target.value)} rows={4} maxLength={250} required />

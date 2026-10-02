@@ -18,7 +18,13 @@ const roleLabels: Record<StaffRole, string> = {
   supervisor: 'Supervisor',
 };
 
-export function OperationsShell({ children, profile }: { children: ReactNode; profile: StaffProfile }) {
+export function OperationsShell({ children, profile, attentionCount, inspectionCount, maintenanceCount }: {
+  children: ReactNode;
+  profile: StaffProfile;
+  attentionCount: number;
+  inspectionCount: number | null;
+  maintenanceCount: number | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -98,6 +104,9 @@ export function OperationsShell({ children, profile }: { children: ReactNode; pr
       <MobileBottomDock
         docked={docked}
         overflow={overflow}
+        attentionCount={attentionCount}
+        inspectionCount={inspectionCount}
+        maintenanceCount={maintenanceCount}
         onOpenMenu={() => setMenuOpen(true)}
       />
     </>

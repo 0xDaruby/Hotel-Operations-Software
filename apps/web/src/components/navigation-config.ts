@@ -43,6 +43,18 @@ export function getNavigationForRole(role: StaffRole): NavigationEntry[] {
   return navigation.filter((item) => item.roles.includes(role));
 }
 
+export function getDockAttentionBadgeCount(
+  href: string,
+  attentionCount: number,
+  inspectionCount: number | null = null,
+  maintenanceCount: number | null = null,
+): number | null {
+  if (href === '/overview') return attentionCount;
+  if (href === '/inspections') return inspectionCount;
+  if (href === '/maintenance') return maintenanceCount;
+  return null;
+}
+
 /** Hard cap for the mobile dock so the capsule never overflows on small screens. */
 export const DOCK_MAX_ITEMS = 6;
 

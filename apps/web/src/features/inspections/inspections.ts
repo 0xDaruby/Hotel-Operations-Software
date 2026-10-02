@@ -17,6 +17,17 @@ export type InspectionRequirement = {
 
 export const DAILY_INSPECTION_CUTOFF_HOUR_LOCAL = 8;
 
+export async function getOpenInspectionCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from('inspection_requirements')
+    .select('id', { count: 'exact', head: true })
+    .neq('status', 'approved');
+
+  if (error) throw new Error(`Unable to load open inspection count: ${error.message}`);
+  return count ?? 0;
+}
+
 export function isDailyInspectionDueAt(
   now: Date,
   isOccupied: boolean,

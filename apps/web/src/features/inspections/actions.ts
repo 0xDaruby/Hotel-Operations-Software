@@ -28,10 +28,12 @@ export async function submitInspectionAction(input: {
   if (error) {
     // Refresh the shared queue so a stale submission shows the latest result on reopen.
     revalidatePath('/inspections');
+    revalidatePath('/(operations)', 'layout');
     return { ok: false, error: cleanMessage(error.message) };
   }
 
   revalidatePath('/inspections');
+  revalidatePath('/(operations)', 'layout');
   revalidatePath('/overview');
   revalidatePath('/rooms');
   revalidatePath('/stays');

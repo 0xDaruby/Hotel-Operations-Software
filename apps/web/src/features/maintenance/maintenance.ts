@@ -17,6 +17,17 @@ export type MaintenanceRoom = {
   roomNumber: string;
 };
 
+export async function getOpenMaintenanceCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from('maintenance_issues')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'open');
+
+  if (error) throw new Error(`Unable to load open maintenance count: ${error.message}`);
+  return count ?? 0;
+}
+
 export async function getMaintenanceIssues(): Promise<MaintenanceIssue[]> {
   const supabase = await createClient();
   const [{ data: issueRows, error: issueError }, { data: roomRows, error: roomError }] = await Promise.all([
