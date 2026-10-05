@@ -7,16 +7,19 @@
     "node": ">=24.15.0"
   },
   "scripts": {
-    "dev": "concurrently -k -n WEB,API,WORKER -c cyan,green,yellow \"pnpm --dir apps/web dev\" \"pnpm --dir apps/api start:dev\" \"pnpm --dir apps/worker start:dev\"",
+    "dev": "pnpm --dir apps/web dev",
+    "dev:scaffolds": "concurrently -k -n WEB,API,WORKER -c cyan,green,yellow \"pnpm --dir apps/web dev\" \"pnpm --dir apps/api start:dev\" \"pnpm --dir apps/worker start:dev\"",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
+    "test:database": "node tests/database/replay.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.15",
     "concurrently": "latest",
     "dotenv": "latest",
     "prettier": "latest",

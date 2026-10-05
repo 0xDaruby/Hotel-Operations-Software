@@ -1,5 +1,81 @@
 # Hotel Operations Engineering Setup
 
+## Current setup — 2026-10-05
+
+This section replaces the historical setup proposal below. The actual runtime is Next.js/React in `apps/web`, Supabase Auth, server actions, PostgreSQL RPCs/RLS, and database pg_cron. NestJS API/worker, domain/contracts, and Prisma remain unused scaffolds; do not duplicate SQL business rules just to populate them.
+
+### Run on Windows CMD
+
+Use Node 24.15+ and the package manager specified in `package.json`:
+
+```cmd
+cd /d "C:\Users\David\Documents\Hotel Operations"
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Only copy `.env.example` to `.env` if the latter does not already exist. Configure it privately. Next loads the root `.env`; required web values are `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+
+Staff provisioning and password completion also require **server-only** `SUPABASE_SERVICE_ROLE_KEY` and `WEB_ORIGIN`. The latter must be the trusted application origin without paths, query strings or credentials. HTTP is allowed only for localhost/127.0.0.1. Never expose admin credentials under a NEXT_PUBLIC_ variable or commit them. The local key is now configured and verified by a read-only Auth admin request (HTTP 200). Restart the local server to load changed environment values.
+
+`pnpm dev` starts web only. `pnpm dev:scaffolds` retains the optional old API/worker development command.
+
+### Existing live database: upgrade boundary
+
+The live database was originally built through Dashboard SQL, and its migration-history query returned no entries. **Do not replay bootstrap or migrations 0001–0009 on it.** Already-existing tables would conflict.
+
+Prepared and reviewed changes:
+
+1. `supabase/migrations/0010_staff_management.sql`: pending setup column, owner directory/provisioning/activation/cancellation, service-only setup completion.
+2. `supabase/migrations/0011_operational_tenant_guards.sql`: active-user/hotel-scoped readiness, room/category/stay consistency guards on five operational tables, fixed timestamp trigger search path.
+
+**Both were applied live on 2026-10-05 after explicit user approval.** Recorded versions are `20261005221751` and `20261005221801`; live function grants, five enabled tenant guards and RLS were verified. Server-only configuration and authenticated end-to-end verification remain required before releasing account setup. Earlier manually applied changes remain unrecorded; do not use `db push` or bootstrap blindly against the live database.
+
+The changes are additive. Frontend rollback to the previous build is compatible; database rollback requires a reviewed forward migration and must preserve audit records. Restoring prior tenant/permission behavior would weaken safeguards.
+
+### New disposable database
+
+1. Run `supabase/bootstrap/foundation.sql` on a clean Supabase project only. It captures verified tables, enums, indexes, private helpers and RLS without users/property seed data.
+2. Apply historical 0001–0003.
+3. Run `supabase/bootstrap/repair-scheduler.sql` **instead of 0004**, whose original dollar quoting is malformed. Historical files remain immutable.
+4. Apply 0005–0011 in order.
+5. Create the initial Owner, property, and inventory through a privileged administrative session. There is no default password or production seed.
+
+The foundation deliberately fails when tables already exist. Local test replay uses PGlite/PostgreSQL with explicit Supabase Auth and cron metadata shims; actual Auth/pg_cron need live verification. Read-only live cron history confirmed successful daily checks at 07:00 UTC / **08:00 Africa/Lagos** on 1–5 October.
+
+### Staff setup and delivery
+
+An Owner creates an individual Receptionist/Supervisor Auth account with an undisclosed random initial password and an inactive pending profile. The database derives the hotel from the authenticated Owner. Only after profile creation succeeds is setup email requested. Failed mail leaves inactive access and a retry action; duplicate emails are never reassigned.
+
+Recovery callbacks support default token fragments and token-hash SSR templates. `/auth/complete` consumes and immediately removes fragments; `/auth/confirm` validates recovery token hashes or PKCE codes. Both use a fixed `/set-password` destination. That page verifies the signed-in user and own pending profile; password update precedes the service-only completion RPC.
+
+Configure Supabase Site URL and allowed redirect URLs for the actual origin and `/auth/confirm?next=/set-password`. Verify mail delivery with a consenting test recipient before rollout. No real staff emails were sent in automated verification.
+
+Owners can cancel pending setup with a reason; old links cannot activate cancelled access. Established staff activation/deactivation requires a reason and expected current state. Owner accounts are protected. General password reset for established accounts is outside this implementation.
+
+### Tests and builds
+
+```cmd
+pnpm test
+pnpm test:database
+pnpm lint
+pnpm typecheck
+pnpm --dir apps/web build
+pnpm --dir apps/web build:vinext
+```
+
+Web tests are now discovered/run by a real test script. Database replay uses pinned `@electric-sql/pglite` and explicitly labels cron limitations. Next route types are regenerated before typecheck because vinext also writes generated metadata.
+
+`node tests/browser/smoke.cjs` runs Edge component integration when Playwright is available; set `PLAYWRIGHT_MODULE_PATH` to the runtime package directory if needed. Optional `BASE_URL` checks an already-running local production server's signed-out redirect and invalid setup callback. Component actions are mocked; tests never send mail or write live rows. They cover repeated refresh, unsaved forms, confirmations and 390/768/1440 pixel layouts.
+
+### Cloudflare and verification limits
+
+`apps/web/wrangler.jsonc` and vinext scripts build the worker; build success is not deployment proof. Before release, configure its server-only admin key, trusted WEB_ORIGIN and public Supabase values, then test auth/setup in that runtime. No deployed URL/health, backup restoration, real email setup, or authenticated device-to-device convergence was verified in this pass.
+
+See `docs/verification/2026-10-05-gap-closure.md` for exact results and remaining configuration/verification. The older proposal below is retained only as historical architectural context.
+
+## Historical setup proposal — superseded
+
 Status: Proposed implementation baseline  
 Updated: 2026-09-19
 

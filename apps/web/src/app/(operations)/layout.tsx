@@ -1,4 +1,5 @@
 import { OperationsShell } from '@/components/operations-shell';
+import { OperationsRefresh } from '@/components/operations-refresh';
 import { requireStaffProfile } from '@/features/auth/staff-profile';
 import { getOwnerOverviewData } from '@/features/inventory/owner-overview-data';
 import { getOpenInspectionCount } from '@/features/inspections/inspections';
@@ -20,6 +21,7 @@ export default async function OperationsLayout({ children }: Readonly<{ children
       inspectionCount={inspectionCount}
       maintenanceCount={maintenanceCount}
     >
+      <OperationsRefresh />
       {children}
     </OperationsShell>
   );

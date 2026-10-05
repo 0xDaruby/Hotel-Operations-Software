@@ -18,11 +18,12 @@ type StaffProfileRow = {
   display_name: string;
   role: string;
   active: boolean;
+  setup_pending: boolean;
 };
 
 type StaffLookup =
   | { status: 'ready'; profile: StaffProfile }
-  | { status: 'signed-out' | 'missing' | 'inactive' | 'invalid-role' };
+  | { status: 'signed-out' | 'missing' | 'inactive' | 'invalid-role' | 'setup-pending' };
 
 function isStaffRole(value: string): value is StaffRole {
   return staffRoles.includes(value as StaffRole);
@@ -36,12 +37,16 @@ export const getStaffProfile = cache(async (): Promise<StaffLookup> => {
 
   const { data, error } = await supabase
     .from('staff_profiles')
-    .select('user_id, hotel_id, display_name, role, active')
+    // Existing schema remains usable before the additive setup migration.
+    // A missing setup_pending field is false; all existing role/active checks
+    // still apply. No new account can be provisioned without its RPC migration.
+    .select('*')
     .eq('user_id', userData.user.id)
     .maybeSingle<StaffProfileRow>();
 
   if (error) throw new Error(`Unable to load the staff profile: ${error.message}`);
   if (!data) return { status: 'missing' };
+  if (data.setup_pending) return { status: 'setup-pending' };
   if (!data.active) return { status: 'inactive' };
   if (!isStaffRole(data.role)) return { status: 'invalid-role' };
 
@@ -60,6 +65,7 @@ export async function requireStaffProfile(allowedRoles?: readonly StaffRole[]) {
   const result = await getStaffProfile();
 
   if (result.status === 'signed-out') redirect('/login');
+  if (result.status === 'setup-pending') redirect('/set-password');
   if (result.status !== 'ready') redirect(`/login?reason=${result.status}`);
 
   if (allowedRoles && !allowedRoles.includes(result.profile.role)) {

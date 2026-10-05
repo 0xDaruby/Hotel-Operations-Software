@@ -9,6 +9,7 @@ const reasonMessages: Record<string, string> = {
   inactive: 'This staff account is inactive. Ask the Owner / Manager for access.',
   missing: 'Your sign-in is valid, but no staff profile is linked to it yet.',
   'invalid-role': 'This account does not have a supported hotel role.',
+  'setup-link': 'This setup link is invalid or expired. Ask the Owner / Manager to send a new setup email.',
 };
 
 type LoginFormProps = {

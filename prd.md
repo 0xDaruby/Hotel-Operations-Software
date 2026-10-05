@@ -1,8 +1,8 @@
 # Hotel Operations Product Requirements Document
 
-Status: Draft product authority  
-Version: 0.1  
-Updated: 2026-09-22
+Status: Product authority with implementation and verification record
+Version: 0.2
+Updated: 2026-10-05
 
 ## 1. Product summary
 
@@ -76,7 +76,7 @@ The first production scope does not include:
 
 ### 6.1 Owner or Manager
 
-The Owner or Manager needs remote operational visibility. They can view all rooms, stays, inspection status, maintenance issues, payment records, and activity history. Exact permission to perform reception and inspection actions in the production product remains open; the prototype allows some owner actions only to demonstrate workflows.
+The Owner or Manager views rooms, stays, inspections, maintenance, payments, and activity; manages staff access; and independently reports or resolves maintenance. The current capability matrix and database reserve stay changes for Receptionists and inspection outcomes for Supervisors. Prototype owner shortcuts do not grant those permissions in the application.
 
 ### 6.2 Receptionist
 
@@ -121,10 +121,10 @@ This derived model is recommended because occupancy, cleanliness, and maintenanc
 
 - **FR-001 — Confirmed:** Only Owner or Manager, Receptionist, and Supervisor profiles are in scope.
 - **FR-002 — Confirmed:** Every Supervisor uses a unique profile so inspections and history name the actual actor.
-- **FR-003 — Proposed:** The Owner or Manager creates, disables, and resets staff access; staff cannot self-register.
+- **FR-003 — Confirmed:** The Owner or Manager creates individual Receptionist and Supervisor accounts, activates or deactivates established access with an attributed reason, and cancels pending setup. Staff cannot self-register or create Owner accounts. New accounts remain inactive until staff set their own password. Pending setup email requests can be retried; general password resets for established accounts remain outside this implementation.
 - **FR-004 — Confirmed:** Authorization is enforced by the backend, not only by hiding controls in the interface.
   - Status note: targeted live authenticated verification passed on 2026-09-22. Receptionist and Supervisor blocked RPC calls returned HTTP 400 with Postgres code `P0001` role-guard responses, while receptionist `record_arrival` and Supervisor `submit_inspection` succeeded. The full UI audit was not required for this verification pass.
-- **FR-005 — Proposed:** Disabled users lose future access without removing their historical attribution.
+- **FR-005 — Confirmed:** Disabled users lose future protected reads and operations without removing historical attribution. Open workspaces recheck access during automatic refresh. The database checks current active profiles rather than relying solely on cached JWT roles.
 
 ### 8.2 Room inventory and categories
 
@@ -194,7 +194,7 @@ This derived model is recommended because occupancy, cleanliness, and maintenanc
 - **FR-079 — Confirmed:** When another Supervisor already completed the inspection, a stale submission is rejected and identifies who completed it and when.
 - **FR-080 — Confirmed:** The queue must not include claim, assignment, or ownership controls.
 - **FR-081 — Proposed:** Common outcomes appear as quick choices before free text to reduce repetitive typing.
-- **FR-082 — Open:** Confirm the daily inspection time, hotel time zone, cutoff behavior for new arrivals, and whether overlapping pending causes are consolidated.
+- **FR-082 — Open:** Decide whether to change the implemented 08:00 Africa/Lagos daily inspection schedule, define cutoff behavior for new arrivals, and confirm whether overlapping pending causes are consolidated.
 
 ### 8.9 Maintenance
 
@@ -361,13 +361,13 @@ These are proposed targets and require measurement on real hardware and connecti
 
 ## 14. Open product decisions
 
-1. Hotel time zone.
-2. Daily inspection time and new-arrival behavior around the cutoff.
+1. New-arrival boundary behavior around the implemented 08:00 Africa/Lagos daily inspection cutoff. The hotel time zone is established as Africa/Lagos.
+2. Whether the daily cutoff should become owner-configurable; the implemented job runs at 07:00 UTC (08:00 Lagos).
 3. Final room-state labels and pending-requirement consolidation.
-4. Maintenance resolution authority.
+4. Whether a future approval sequence should replace current independent Owner or Supervisor maintenance resolution.
 5. Final guest fields and maintenance note limit.
-6. Owner or Manager operational permissions.
-7. Category inventory, rates, effective-date behavior, and cross-category move pricing.
+6. Any future changes to the current role capability matrix.
+7. Effective-date behavior and cross-category move pricing. Established inventory is 40 rooms with Standard ₦40,000, Deluxe ₦60,000, and Executive ₦80,000 per paid 24-hour period.
 8. Historical correction calculations and whether closed stays may be corrected.
 9. External payment reconciliation process.
 10. Data retention, privacy, backup retention, and audit export requirements.
@@ -376,3 +376,32 @@ These are proposed targets and require measurement on real hardware and connecti
 ## 15. Prototype relationship
 
 `03-hotel-operations.html` demonstrates the main operations flows with browser-local sample data. It validates interaction direction and responsive layout, not production authentication, authorization, persistence, cross-device synchronization, scheduled work, backup, or deployment. Its disclosed assumptions remain proposals until approved here and recorded in `MEMORY.md`.
+
+## 16. Current implementation and verification — 2026-10-05
+
+Source and fresh evidence establish implementation status separately from product approval. Older milestone notes are historical snapshots.
+
+The active runtime is Next.js/React in `apps/web`, Supabase Auth, protected server-rendered routes, server actions, and RLS-scoped reads. PostgreSQL RPCs implement transactional changes and audit history; pg_cron runs daily inspections. NestJS API/worker, shared domain/contracts, and Prisma remain unused scaffolds. Cloudflare/vinext build configuration exists; local build success does not establish deployment health.
+
+Existing code covers login, role-aware navigation, owner overview, room board, arrivals, extensions, moves, corrections, voids, confirmed departures, payments, shared inspections, maintenance, and attributed activity. Occupancy, inspections, and maintenance remain separate facts.
+
+Gap closure prepared in this checkout:
+
+- Owner-scoped staff listing includes email addresses. Server-only provisioning creates an undisclosed random initial password and an inactive pending profile before requesting setup mail. Failed mail exposes retry; duplicate emails are never reassigned.
+- Password setup verifies the actual signed-in user. Only a service-role call completes setup after successful password update. Cancellation is audited and prevents old setup links or ordinary activation from enabling access.
+- Established staff activation/deactivation requires an Owner, same-hotel target, expected activation state, and reason. Owner profiles are protected.
+- Shared screens refresh server data every four seconds after the previous refresh settles, pause when hidden/offline, and resume on focus/reconnect. Browser component tests verify unsaved input preservation; the five-second target still needs independent authenticated-device measurement.
+- Clean-project foundation bootstrap and scheduler repair are separate from immutable historical migrations. `0011` adds room/category/stay hotel guards to stays, payments, inspections, maintenance, and activity, and conceals foreign-hotel readiness.
+
+Verification and release boundary:
+
+- Results are recorded in `docs/verification/2026-10-05-gap-closure.md`.
+- The live Supabase project retains RLS on all ten foundation/operational tables. Read-only queries verified successful daily-inspection runs on 1–5 October at 07:00 UTC.
+- **Migrations 0010 and 0011 were applied live on 2026-10-05 after explicit user approval.** Supabase recorded staff_management `20261005221751` and operational_tenant_guards `20261005221801`. Live checks verified six staff functions, five enabled tenant guards, restricted setup completion, four unchanged active profiles, and readiness returning false for all 40 rooms without authenticated identity.
+- Database prerequisites for staff administration are installed. Never replay bootstrap/historical migrations against the existing database; those older changes remain outside recorded migration history.
+- The server-only admin key is now privately configured in the ignored local `.env`; a read-only Supabase Auth admin request returned HTTP 200. Provisioning and password completion require that server-only value plus trusted `WEB_ORIGIN` and verified Supabase mail/redirect settings. No real staff email was sent.
+- Separate physical-device workflows, actual new-account mail setup, backups/restoration, and deployed frontend health remain unverified. Existing-account live browser-session verification is recorded below; mocked browser actions and local cron shims alone are not live proof.
+
+Local admin configuration follow-up (2026-10-05): the server-only key is configured in the ignored .env and authenticated against Supabase Auth admin (HTTP 200). WEB_ORIGIN and the allowed setup callback point to localhost:3001, the verified Hotel Operations checkout. The local server was restarted there; the Owner session loaded live staff controls. Port 3000 belongs to the separate Hotel Ops checkout. Across 115 generated browser assets, the secret occurred zero times. Custom SMTP remains disabled; new-account email/password setup remains pending; independent-session refresh was subsequently verified below.
+
+Existing-account verification follow-up (2026-10-05): user explicitly left new-account email setup pending. Separate Owner (Edge) and Supervisor (in-app browser) sessions passed real staff deactivation/restoration, two automatic activity updates without observer reload/navigation, and Supervisor denial of /staff. Existing Role Audit Supervisor access was restored; all four profiles are active. Four attributed test audit entries remain. No accounts or operational guest/payment records were added. Verification covers independent browser sessions on one PC against live Supabase, not separate physical devices or a deployed frontend.
