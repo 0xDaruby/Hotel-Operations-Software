@@ -49,9 +49,9 @@ export function getDockAttentionBadgeCount(
   inspectionCount: number | null = null,
   maintenanceCount: number | null = null,
 ): number | null {
-  if (href === '/overview') return attentionCount;
-  if (href === '/inspections') return inspectionCount;
-  if (href === '/maintenance') return maintenanceCount;
+  if (href === '/overview') return attentionCount > 0 ? attentionCount : null;
+  if (href === '/inspections') return inspectionCount !== null && inspectionCount > 0 ? inspectionCount : null;
+  if (href === '/maintenance') return maintenanceCount !== null && maintenanceCount > 0 ? maintenanceCount : null;
   return null;
 }
 
@@ -80,4 +80,19 @@ export function getDockNavigation(role: StaffRole): DockedNavigation {
   const dockedHrefs = new Set(docked.map((item) => item.href));
   const overflow = getNavigationForRole(role).filter((item) => !dockedHrefs.has(item.href));
   return { docked, overflow };
+}
+
+export type DockBadgeRequirements = {
+  overview: boolean;
+  inspections: boolean;
+  maintenance: boolean;
+};
+
+export function getDockBadgeRequirements(role: StaffRole): DockBadgeRequirements {
+  const destinations = new Set(getDockNavigation(role).docked.map((item) => item.href));
+  return {
+    overview: destinations.has('/overview'),
+    inspections: destinations.has('/inspections'),
+    maintenance: destinations.has('/maintenance'),
+  };
 }
