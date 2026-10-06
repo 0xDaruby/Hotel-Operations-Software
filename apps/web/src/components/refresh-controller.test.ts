@@ -9,7 +9,7 @@ function harness() {
   const controller = createRefreshController({
     isActive: () => active,
     refresh: () => { calls += 1; },
-    schedule: (callback, delay) => { assert.equal(delay, 4000); scheduled = callback; return 1; },
+    schedule: (callback, delay) => { assert.equal(delay, 20_000); scheduled = callback; return 1; },
     cancel: () => { scheduled = undefined; },
   });
   return { controller, setActive: (value: boolean) => { active = value; }, calls: () => calls,

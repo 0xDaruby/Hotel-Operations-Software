@@ -22,7 +22,7 @@ export function createRefreshController(dependencies: RefreshDependencies) {
     timer = dependencies.schedule(() => {
       timer = undefined;
       request();
-    }, 4000);
+    }, 20_000);
   }
 
   function request() {
