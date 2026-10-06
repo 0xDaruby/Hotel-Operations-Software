@@ -94,7 +94,7 @@ export function InventoryOverview({
         <div className="owner-section-heading">
           <div>
             <p className="eyebrow">Needs attention</p>
-            <h2 id="owner-attention-heading">{attentionItems.length ? `${attentionItems.length} items, oldest first` : 'All clear'}</h2>
+            <h2 id="owner-attention-heading">{attentionItems.length ? `${attentionItems.length} items, oldest first` : inspectionDueRoomIds.length ? 'Inspections pending' : 'All clear'}</h2>
           </div>
           {attentionItems.length > 3 ? (
             <Link className="owner-view-all" href={attentionItems[0].href}>View all {attentionItems.length}</Link>
@@ -128,7 +128,9 @@ export function InventoryOverview({
             })}
           </ol>
         ) : (
-          <p className="owner-attention-empty" role="status">Nothing needs attention right now.</p>
+          <p className="owner-attention-empty" role="status">{inspectionDueRoomIds.length
+            ? `${inspectionDueRoomIds.length} rooms awaiting inspection. Inspections appear here after waiting 2 hours.`
+            : 'Nothing needs attention right now.'}</p>
         )}
         </section>
 

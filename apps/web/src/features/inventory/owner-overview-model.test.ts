@@ -5,7 +5,7 @@ import { buildOwnerAttentionItems, getOwnerRoomState } from './owner-overview-mo
 
 const now = '2026-10-02T14:00:00.000Z';
 
-test('includes each overdue stay and each issue past its waiting threshold, oldest first', () => {
+test('includes overdue stays, inspections waiting two hours, and open maintenance, oldest first', () => {
   const items = buildOwnerAttentionItems({
     now,
     stays: [
@@ -27,11 +27,30 @@ test('includes each overdue stay and each issue past its waiting threshold, olde
 
   assert.deepEqual(items.map((item) => item.id), [
     'maintenance-at-threshold',
+    'maintenance-too-new',
     'inspection-at-threshold',
+    'inspection-too-new',
     'stay-overdue',
   ]);
-  assert.deepEqual(items.map((item) => item.roomNumber), ['101', '101', '101']);
-  assert.deepEqual(items.map((item) => item.kind), ['maintenance', 'inspection', 'departure']);
+  assert.deepEqual(items.map((item) => item.roomNumber), ['101', '102', '101', '102', '101']);
+  assert.deepEqual(items.map((item) => item.kind), ['maintenance', 'maintenance', 'inspection', 'inspection', 'departure']);
+});
+
+test('pending inspections enter attention at two hours, with newer work excluded', () => {
+  const items = buildOwnerAttentionItems({
+    now,
+    stays: [],
+    inspections: [
+      ...['r1', 'r2', 'r3'].map((room_id) => ({ id: room_id, room_id, due_at: '2026-10-02T12:00:00.000Z', status: 'pending' })),
+      { id: 'newer', room_id: 'r6', due_at: '2026-10-02T12:00:00.001Z', status: 'pending' },
+      { id: 'approved', room_id: 'r4', due_at: now, status: 'approved' },
+      { id: 'future', room_id: 'r5', due_at: '2026-10-02T15:00:00.000Z', status: 'pending' },
+    ],
+    maintenanceIssues: [{ id: 'new-block', room_id: 'r1', reported_at: now }],
+    roomNumberById: new Map(),
+  });
+  assert.equal(items.filter((item) => item.kind === 'inspection').length, 3);
+  assert.equal(items.filter((item) => item.kind === 'maintenance').length, 1);
 });
 
 test('counts multiple attention items for one room independently', () => {

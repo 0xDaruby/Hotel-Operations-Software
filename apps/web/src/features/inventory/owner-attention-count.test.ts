@@ -13,6 +13,8 @@ const stays = [
 const inspections = [
   { id: 'threshold', room_id: 'r1', status: 'access_blocked', due_at: '2026-10-06T08:00:00.000Z' },
   { id: 'recent', room_id: 'r1', status: 'pending', due_at: '2026-10-06T08:00:01.000Z' },
+  { id: 'new', room_id: 'r2', status: 'pending', due_at: now.toISOString() },
+  { id: 'future', room_id: 'r3', status: 'pending', due_at: '2026-10-06T13:00:00.000Z' },
   { id: 'done', room_id: 'r1', status: 'approved', due_at: '2026-10-05T08:00:00.000Z' },
 ];
 const issues = [
@@ -51,14 +53,14 @@ function client(failure = false, empty = false) {
   return { supabase, queried };
 }
 
-test('badge count matches overview thresholds and counts overlapping room issues independently', async () => {
+test('badge matches overview attention and excludes newer inspections and completed work', async () => {
   const { supabase, queried } = client();
   const expected = buildOwnerAttentionItems({
     now: now.toISOString(), stays, inspections,
     maintenanceIssues: issues.filter((issue) => issue.status === 'open'),
     roomNumberById: new Map([['r1', '101']]),
   }).length;
-  assert.equal(expected, 3);
+  assert.equal(expected, 5);
   assert.equal(await getOwnerAttentionCount(supabase, now), expected);
   assert.deepEqual(queried, ['stays', 'inspection_requirements', 'maintenance_issues']);
 });
