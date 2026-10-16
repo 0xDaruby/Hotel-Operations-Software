@@ -1,3 +1,4 @@
+import { readAllRows } from '@/lib/read-all-rows';
 import { getStaffProfile, type StaffProfile } from '@/features/auth/staff-profile';
 import { createClient } from '@/lib/supabase/server';
 import { toLagosDate } from './format';
@@ -34,8 +35,18 @@ export type PaymentRecord = {
 export type OperationalContext = {
   hotelId: string;
   profile: StaffProfile;
-  rooms: { id: string; roomNumber: string; categoryName: string; dailyRate: number }[];
-  readyRooms: { id: string; roomNumber: string; categoryName: string; dailyRate: number }[];
+  rooms: {
+    id: string;
+    roomNumber: string;
+    categoryName: string;
+    dailyRate: number;
+  }[];
+  readyRooms: {
+    id: string;
+    roomNumber: string;
+    categoryName: string;
+    dailyRate: number;
+  }[];
   occupiedRoomIds: Set<string>;
   now: string;
   today: string;
@@ -75,7 +86,11 @@ function numberValue(row: Record<string, unknown>, ...keys: string[]) {
   return null;
 }
 
-export function parseStay(row: Record<string, unknown>, roomNumberById: Map<string, string>, categoryNameById: Map<string, string>): Stay | null {
+export function parseStay(
+  row: Record<string, unknown>,
+  roomNumberById: Map<string, string>,
+  categoryNameById: Map<string, string>,
+): Stay | null {
   const roomId = stringValue(row, 'room_id');
   const guestName = stringValue(row, 'guest_name')?.trim();
   if (!roomId || !guestName) return null;
@@ -111,7 +126,10 @@ export function parseStay(row: Record<string, unknown>, roomNumberById: Map<stri
 }
 
 export function getBlockedRoomIds(
-  inspectionRows: Array<{ room_id?: string | null; status?: string | null }> = [],
+  inspectionRows: Array<{
+    room_id?: string | null;
+    status?: string | null;
+  }> = [],
   maintenanceRoomIds: Iterable<string> = [],
 ): Set<string> {
   const blockedRoomIds = new Set<string>();
@@ -133,35 +151,73 @@ export async function getOperationalContext(): Promise<OperationalContext> {
   const profile = lookup.profile;
   const supabase = await createClient();
 
-  const { data: roomRows } = await supabase
-    .from('rooms')
-    .select('id, room_number, category_id, active, room_categories(name, daily_rate)')
-    .eq('active', true)
-    .order('room_number', { ascending: true });
-  const [{ data: inspectionRows }, { data: maintenanceRows }] = await Promise.all([
-    supabase.from('inspection_requirements').select('room_id, status').neq('status', 'approved'),
-    supabase.from('maintenance_issues').select('room_id').eq('status', 'open'),
+  const roomRows = await readAllRows(
+    (from, to) =>
+      supabase
+        .from('rooms')
+        .select('id, room_number, category_id, active, room_categories(name, daily_rate)', { count: 'exact' })
+        .eq('active', true)
+
+        .order('id', { ascending: true })
+        .range(from, to),
+    'rooms',
+  );
+  const [inspectionRows, maintenanceRows] = await Promise.all([
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('inspection_requirements')
+          .select('id, room_id, status', { count: 'exact' })
+          .neq('status', 'approved')
+          .order('id', { ascending: true })
+          .range(from, to),
+      'inspection requirements',
+    ),
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('maintenance_issues')
+          .select('id, room_id', { count: 'exact' })
+          .eq('status', 'open')
+          .order('id', { ascending: true })
+          .range(from, to),
+      'maintenance issues',
+    ),
   ]);
   const blockedRoomIds = getBlockedRoomIds(
-    (inspectionRows ?? []) as Array<{ room_id?: string | null; status?: string | null }>,
+    (inspectionRows ?? []) as Array<{
+      room_id?: string | null;
+      status?: string | null;
+    }>,
     ((maintenanceRows ?? []) as Array<{ room_id?: string | null }>).map((row) => row.room_id ?? '').filter(Boolean),
   );
-  const { data: activeStayRows } = await supabase
-    .from('stays')
-    .select('room_id')
-    .eq('status', 'active');
+  const activeStayRows = await readAllRows(
+    (from, to) =>
+      supabase
+        .from('stays')
+        .select('id, room_id', { count: 'exact' })
+        .eq('status', 'active')
+        .order('id', { ascending: true })
+        .range(from, to),
+    'stays',
+  );
   const occupiedRoomIds = new Set((activeStayRows ?? []).map((row: { room_id: string }) => row.room_id));
 
   const rooms: OperationalContext['rooms'] = [];
   const readyRooms: OperationalContext['readyRooms'] = [];
+  roomRows.sort((a, b) => a.room_number.localeCompare(b.room_number));
   for (const row of (roomRows ?? []) as Record<string, unknown>[]) {
     const id = row.id as string;
     const cat = (Array.isArray(row.room_categories) ? row.room_categories[0] : row.room_categories) as
-      | { name?: string; daily_rate?: number }
-      | undefined;
+      { name?: string; daily_rate?: number } | undefined;
     const categoryName = (cat?.name as string) ?? '—';
     const dailyRate = Number(cat?.daily_rate ?? 0);
-    const entry = { id, roomNumber: row.room_number as string, categoryName, dailyRate };
+    const entry = {
+      id,
+      roomNumber: row.room_number as string,
+      categoryName,
+      dailyRate,
+    };
     rooms.push(entry);
     if (!occupiedRoomIds.has(id) && !blockedRoomIds.has(id)) readyRooms.push(entry);
   }
@@ -179,33 +235,65 @@ export async function getOperationalContext(): Promise<OperationalContext> {
 
 export async function getActiveStays(): Promise<Stay[]> {
   const supabase = await createClient();
-  const [{ data: stayRows, error: stayError }, { data: roomRows }, { data: categoryRows }] = await Promise.all([
-    supabase
-      .from('stays')
-      .select('id, room_id, guest_name, guest_phone, category_id, original_daily_rate, arrival_at, departure_due_at, paid_days, status, version, created_by, staff_profiles!created_by(display_name)')
-      .eq('status', 'active')
-      .order('arrival_at', { ascending: true }),
-    supabase.from('rooms').select('id, room_number'),
-    supabase.from('room_categories').select('id, name'),
+  const [stayRows, roomRows, categoryRows] = await Promise.all([
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('stays')
+          .select(
+            'id, room_id, guest_name, guest_phone, category_id, original_daily_rate, arrival_at, departure_due_at, paid_days, status, version, created_by, staff_profiles!created_by(display_name)',
+            { count: 'exact' },
+          )
+          .eq('status', 'active')
+
+          .order('id', { ascending: true })
+          .range(from, to),
+      'stays',
+    ),
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('rooms')
+          .select('id, room_number', { count: 'exact' })
+          .order('id', { ascending: true })
+          .range(from, to),
+      'rooms',
+    ),
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('room_categories')
+          .select('id, name', { count: 'exact' })
+          .order('id', { ascending: true })
+          .range(from, to),
+      'room categories',
+    ),
   ]);
 
-  if (stayError) throw new Error(`Unable to load active stays: ${stayError.message}`);
-
-  const roomNumberById = new Map((roomRows ?? []).map((row: { id: string; room_number: string }) => [row.id, row.room_number]));
+  const roomNumberById = new Map(
+    (roomRows ?? []).map((row: { id: string; room_number: string }) => [row.id, row.room_number]),
+  );
   const categoryNameById = new Map((categoryRows ?? []).map((row: { id: string; name: string }) => [row.id, row.name]));
   return ((stayRows ?? []) as Record<string, unknown>[])
     .map((row) => parseStay(row, roomNumberById, categoryNameById))
-    .filter((stay): stay is Stay => stay !== null);
+    .filter((stay): stay is Stay => stay !== null)
+    .sort((a, b) => a.arrivalAt.localeCompare(b.arrivalAt) || a.id.localeCompare(b.id));
 }
 
 export async function getStayPayments(stayIds: string[]): Promise<PaymentRecord[]> {
   if (!stayIds.length) return [];
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('payment_records')
-    .select('id, stay_id, kind, amount, received_on, created_by_name, created_at')
-    .in('stay_id', stayIds)
-    .order('created_at', { ascending: true });
+  const data = await readAllRows(
+    (from, to) =>
+      supabase
+        .from('payment_records')
+        .select('id, stay_id, kind, amount, received_on, created_by_name, created_at', { count: 'exact' })
+        .in('stay_id', stayIds)
+
+        .order('id', { ascending: true })
+        .range(from, to),
+    'payment records',
+  );
   return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
     id: row.id as string,
     stayId: row.stay_id as string,
@@ -214,30 +302,63 @@ export async function getStayPayments(stayIds: string[]): Promise<PaymentRecord[
     receivedOn: row.received_on as string,
     createdByName: (row.created_by_name as string) ?? '—',
     createdAt: row.created_at as string,
-  }));
+  })).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 }
 
-export async function getPaymentsForDate(date: string): Promise<{ payments: (PaymentRecord & { roomNumber: string })[]; total: number }> {
+export async function getPaymentsForDate(date: string): Promise<{
+  payments: (PaymentRecord & { roomNumber: string })[];
+  total: number;
+}> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('payment_records')
-    .select('id, stay_id, kind, amount, received_on, created_by_name, created_at, stays(status)')
-    .eq('received_on', date)
-    .order('created_at', { ascending: true });
+  const data = await readAllRows(
+    (from, to) =>
+      supabase
+        .from('payment_records')
+        .select('id, stay_id, kind, amount, received_on, created_by_name, created_at, stays(status)', {
+          count: 'exact',
+        })
+        .eq('received_on', date)
+
+        .order('id', { ascending: true })
+        .range(from, to),
+    'payment records',
+  );
   const rows = ((data ?? []) as Record<string, unknown>[]).filter((row) => {
     const stay = (Array.isArray(row.stays) ? row.stays[0] : row.stays) as { status?: string } | undefined;
     return stay?.status !== 'void';
   });
   const stayIds = [...new Set(rows.map((row) => row.stay_id as string))];
-  const { data: stayRoomRows } = stayIds.length
-    ? await supabase.from('stays').select('id, room_id').in('id', stayIds)
-    : { data: [] as { id: string; room_id: string }[] };
-  const stayRoomById = new Map((stayRoomRows ?? []).map((row: { id: string; room_id: string }) => [row.id, row.room_id]));
+  const stayRoomRows = stayIds.length
+    ? await readAllRows(
+        (from, to) =>
+          supabase
+            .from('stays')
+            .select('id, room_id', { count: 'exact' })
+            .in('id', stayIds)
+            .order('id', { ascending: true })
+            .range(from, to),
+        'stays',
+      )
+    : ([] as { id: string; room_id: string }[]);
+  const stayRoomById = new Map(
+    (stayRoomRows ?? []).map((row: { id: string; room_id: string }) => [row.id, row.room_id]),
+  );
   const roomIds = [...new Set([...stayRoomById.values()])];
-  const { data: roomRows } = roomIds.length
-    ? await supabase.from('rooms').select('id, room_number').in('id', roomIds)
-    : { data: [] as { id: string; room_number: string }[] };
-  const roomNumberById = new Map((roomRows ?? []).map((row: { id: string; room_number: string }) => [row.id, row.room_number]));
+  const roomRows = roomIds.length
+    ? await readAllRows(
+        (from, to) =>
+          supabase
+            .from('rooms')
+            .select('id, room_number', { count: 'exact' })
+            .in('id', roomIds)
+            .order('id', { ascending: true })
+            .range(from, to),
+        'rooms',
+      )
+    : ([] as { id: string; room_number: string }[]);
+  const roomNumberById = new Map(
+    (roomRows ?? []).map((row: { id: string; room_number: string }) => [row.id, row.room_number]),
+  );
   const payments = rows.map((row) => ({
     id: row.id as string,
     stayId: row.stay_id as string,
@@ -247,7 +368,7 @@ export async function getPaymentsForDate(date: string): Promise<{ payments: (Pay
     createdByName: (row.created_by_name as string) ?? '—',
     createdAt: row.created_at as string,
     roomNumber: roomNumberById.get(stayRoomById.get(row.stay_id as string) ?? '') ?? '—',
-  }));
+  })).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
   return { payments, total: payments.reduce((sum, p) => sum + p.amount, 0) };
 }
 
@@ -255,7 +376,11 @@ export async function getStayTotals(stayIds: string[]): Promise<Record<string, S
   const payments = await getStayPayments(stayIds);
   const totals: Record<string, StayTotals> = {};
   for (const p of payments) {
-    const entry = totals[p.stayId] ?? { stayId: p.stayId, totalAmount: 0, totalDays: 0 };
+    const entry = totals[p.stayId] ?? {
+      stayId: p.stayId,
+      totalAmount: 0,
+      totalDays: 0,
+    };
     entry.totalAmount += p.amount;
     entry.totalDays += p.kind === 'initial' ? 1 : 0;
     totals[p.stayId] = entry;

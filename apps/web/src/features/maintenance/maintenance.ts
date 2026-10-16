@@ -1,3 +1,4 @@
+import { readAllRows } from '@/lib/read-all-rows';
 import { createClient } from '@/lib/supabase/server';
 
 export type MaintenanceIssueType = 'air_conditioning' | 'furniture' | 'plumbing' | 'electrical' | 'other';
@@ -25,24 +26,40 @@ export async function getOpenMaintenanceCount(): Promise<number> {
     .eq('status', 'open');
 
   if (error) throw new Error(`Unable to load open maintenance count: ${error.message}`);
-  return count ?? 0;
+  if (count == null) throw new Error('Unable to load complete operational count.');
+  return count;
 }
 
 export async function getMaintenanceIssues(): Promise<MaintenanceIssue[]> {
   const supabase = await createClient();
-  const [{ data: issueRows, error: issueError }, { data: roomRows, error: roomError }] = await Promise.all([
-    supabase
-      .from('maintenance_issues')
-      .select('id, room_id, issue_type, detail, reported_at, version')
-      .eq('status', 'open')
-      .order('reported_at', { ascending: true }),
-    supabase.from('rooms').select('id, room_number'),
+  const [issueRows, roomRows] = await Promise.all([
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('maintenance_issues')
+          .select('id, room_id, issue_type, detail, reported_at, version', {
+            count: 'exact',
+          })
+          .eq('status', 'open')
+
+          .order('id', { ascending: true })
+          .range(from, to),
+      'maintenance issues',
+    ),
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('rooms')
+          .select('id, room_number', { count: 'exact' })
+          .order('id', { ascending: true })
+          .range(from, to),
+      'rooms',
+    ),
   ]);
 
-  if (issueError) throw new Error(`Unable to load maintenance issues: ${issueError.message}`);
-  if (roomError) throw new Error(`Unable to load rooms: ${roomError.message}`);
-
-  const roomNumberById = new Map((roomRows ?? []).map((room: { id: string; room_number: string }) => [room.id, room.room_number]));
+  const roomNumberById = new Map(
+    (roomRows ?? []).map((room: { id: string; room_number: string }) => [room.id, room.room_number]),
+  );
 
   return ((issueRows ?? []) as Record<string, unknown>[])
     .map((row) => ({
@@ -54,21 +71,26 @@ export async function getMaintenanceIssues(): Promise<MaintenanceIssue[]> {
       reportedAt: row.reported_at as string,
       version: Number(row.version ?? 1),
     }))
-    .filter((issue) => issue.id && issue.roomId);
+    .filter((issue) => issue.id && issue.roomId)
+    .sort((a, b) => a.reportedAt.localeCompare(b.reportedAt) || a.id.localeCompare(b.id));
 }
 
 export async function getMaintenanceReportableRooms(): Promise<MaintenanceRoom[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('rooms')
-    .select('id, room_number')
-    .eq('active', true)
-    .order('room_number', { ascending: true });
+  const data = await readAllRows(
+    (from, to) =>
+      supabase
+        .from('rooms')
+        .select('id, room_number', { count: 'exact' })
+        .eq('active', true)
 
-  if (error) throw new Error(`Unable to load rooms: ${error.message}`);
+        .order('id', { ascending: true })
+        .range(from, to),
+    'rooms',
+  );
 
   return (data ?? []).map((room: { id: string; room_number: string }) => ({
     id: room.id,
     roomNumber: room.room_number,
-  }));
+  })).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber) || a.id.localeCompare(b.id));
 }

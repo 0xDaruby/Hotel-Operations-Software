@@ -53,7 +53,8 @@ async function main() {
     const errors=[];page.on('pageerror', error=>errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.getByLabel('Full name').fill('Unsaved staff name');
-    await page.waitForFunction(()=>window.__refreshCount>=2,{},{timeout:15000});
+    // Production polling is 20 seconds and serializes on refresh completion.
+    await page.waitForFunction(()=>window.__refreshCount>=2,{},{timeout:60000});
     assert.equal(await page.getByLabel('Full name').inputValue(),'Unsaved staff name','polling must preserve unsaved input');
     await page.getByRole('button',{name:'Deactivate access'}).click();
     const dialog=page.getByRole('dialog');await dialog.waitFor();

@@ -1,3 +1,4 @@
+import { readAllRows } from '@/lib/read-all-rows';
 import { createClient } from '@/lib/supabase/server';
 
 export type ActivityEvent = {
@@ -13,51 +14,62 @@ export type ActivityEvent = {
 
 export async function getActivityFeed(limit = 50): Promise<ActivityEvent[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const requestedLimit = Math.max(0, Math.floor(limit));
+  if (!Number.isFinite(requestedLimit)) throw new Error('Invalid activity limit.');
+  if (requestedLimit === 0) return [];
+  const result = await supabase
     .from('activity_events')
-    .select('id, action, actor_name, room_id, stay_id, reason, created_at, before_facts, after_facts')
+    .select('id, action, actor_name, room_id, stay_id, reason, created_at, before_facts, after_facts', {
+      count: 'exact',
+    })
     .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) throw new Error(`Unable to load activity history: ${error.message}`);
+    .order('id', { ascending: false })
+    .range(0, requestedLimit - 1);
+  if (result.error) throw new Error(`Unable to load activity history: ${result.error.message}`);
+  if (result.data == null || result.count == null || result.data.length !== Math.min(result.count, requestedLimit)) {
+    throw new Error('Unable to load complete activity history.');
+  }
+  const data = result.data;
 
   const roomIds = [...new Set((data ?? []).map((row) => row.room_id).filter(Boolean))] as string[];
   const roomMap = new Map<string, string>();
 
   if (roomIds.length) {
-    const { data: roomRows, error: roomError } = await supabase
-      .from('rooms')
-      .select('id, room_number')
-      .in('id', roomIds);
-
-    if (!roomError) {
-      for (const row of roomRows ?? []) {
-        roomMap.set(row.id, row.room_number);
-      }
-    }
+    const roomRows = await readAllRows(
+      (from, to) =>
+        supabase
+          .from('rooms')
+          .select('id, room_number', { count: 'exact' })
+          .in('id', roomIds)
+          .order('id', { ascending: true })
+          .range(from, to),
+      'activity rooms',
+    );
+    for (const row of roomRows) roomMap.set(row.id, row.room_number);
   }
 
   const stayIds = [...new Set((data ?? []).map((row) => row.stay_id).filter(Boolean))] as string[];
   const stayNameMap = new Map<string, string>();
 
   if (stayIds.length) {
-    const { data: stayRows, error: stayError } = await supabase
-      .from('stays')
-      .select('id, guest_name')
-      .in('id', stayIds);
-
-    if (!stayError) {
-      for (const row of stayRows ?? []) {
-        stayNameMap.set(row.id, row.guest_name);
-      }
-    }
+    const stayRows = await readAllRows(
+      (from, to) =>
+        supabase
+          .from('stays')
+          .select('id, guest_name', { count: 'exact' })
+          .in('id', stayIds)
+          .order('id', { ascending: true })
+          .range(from, to),
+      'activity stays',
+    );
+    for (const row of stayRows) stayNameMap.set(row.id, row.guest_name);
   }
 
   return ((data ?? []) as Record<string, unknown>[]).map((row) => {
     const roomId = typeof row.room_id === 'string' ? row.room_id : null;
     const stayId = typeof row.stay_id === 'string' ? row.stay_id : null;
-    const roomNumber = roomId ? roomMap.get(roomId) ?? null : null;
-    const guestName = stayId ? stayNameMap.get(stayId) ?? null : null;
+    const roomNumber = roomId ? (roomMap.get(roomId) ?? null) : null;
+    const guestName = stayId ? (stayNameMap.get(stayId) ?? null) : null;
     const details = {
       before: row.before_facts ?? null,
       after: row.after_facts ?? null,

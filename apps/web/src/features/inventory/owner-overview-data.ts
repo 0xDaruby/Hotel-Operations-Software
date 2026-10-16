@@ -5,13 +5,14 @@ import { getInventory, type Inventory } from './inventory';
 import { summarizeInventoryMetrics, type InventorySummary } from './inventory-summary';
 import { buildOwnerAttentionItems, type OwnerAttentionItem } from './owner-overview-model';
 import { toLagosDate } from '@/features/stays/format';
-import { getPreviousOperatingDate, summarizePaymentTotals, type OwnerPaymentObservation, type OwnerPaymentTotals } from './owner-overview-payments';
-import { getLagosOperatingDayBounds, summarizeOwnerMovement, type OwnerMovement } from './owner-overview-movement';
+import type { OwnerPaymentTotals } from './owner-overview-payments';
+import type { OwnerMovement } from './owner-overview-movement';
+import { getOwnerStatistics } from './owner-statistics';
+import { readAllRows } from '@/lib/read-all-rows';
 
 type StayRow = { id: string; room_id: string; departure_due_at: string; status: string };
 type InspectionRow = { id: string; room_id: string; due_at: string; status: string };
 type MaintenanceRow = { id: string; room_id: string; reported_at: string; version: number };
-type PaymentRow = OwnerPaymentObservation & { kind: 'initial' | 'extension' };
 
 export type OwnerOverviewData = {
   inventory: Inventory;
@@ -31,25 +32,15 @@ export const getOwnerOverviewData = cache(async function getOwnerOverviewData():
   const [inventory, supabase, teamPulseEvents] = await Promise.all([getInventory(), createClient(), getActivityFeed(5)]);
   const now = new Date().toISOString();
   const today = toLagosDate(now);
-  const yesterday = getPreviousOperatingDate(today);
-  const dayBounds = getLagosOperatingDayBounds(today);
-  const [staysResult, inspectionsResult, maintenanceResult, paymentsResult, movementEventsResult] = await Promise.all([
-    supabase.from('stays').select('id, room_id, departure_due_at, status').eq('status', 'active'),
-    supabase.from('inspection_requirements').select('id, room_id, due_at, status').neq('status', 'approved'),
-    supabase.from('maintenance_issues').select('id, room_id, reported_at, version').eq('status', 'open'),
-    supabase.from('payment_records').select('amount, received_on, kind, stays(status)').in('received_on', [today, yesterday]),
-    supabase.from('activity_events').select('action').gte('created_at', dayBounds.start).lt('created_at', dayBounds.end),
+  const [stays, inspections, maintenanceIssues, statistics] = await Promise.all([
+    readAllRows<StayRow>((from, to) => supabase.from('stays')
+      .select('id, room_id, departure_due_at, status', { count: 'exact' }).eq('status', 'active').order('id').range(from, to), 'active stays'),
+    readAllRows<InspectionRow>((from, to) => supabase.from('inspection_requirements')
+      .select('id, room_id, due_at, status', { count: 'exact' }).neq('status', 'approved').order('id').range(from, to), 'inspection status'),
+    readAllRows<MaintenanceRow>((from, to) => supabase.from('maintenance_issues')
+      .select('id, room_id, reported_at, version', { count: 'exact' }).eq('status', 'open').order('id').range(from, to), 'maintenance status'),
+    getOwnerStatistics(supabase, today, now),
   ]);
-
-  if (staysResult.error) throw new Error(`Unable to load active stays: ${staysResult.error.message}`);
-  if (inspectionsResult.error) throw new Error(`Unable to load inspection status: ${inspectionsResult.error.message}`);
-  if (maintenanceResult.error) throw new Error(`Unable to load maintenance status: ${maintenanceResult.error.message}`);
-  if (paymentsResult.error) throw new Error(`Unable to load recent payment totals: ${paymentsResult.error.message}`);
-  if (movementEventsResult.error) throw new Error(`Unable to load today's movement: ${movementEventsResult.error.message}`);
-
-  const stays = (staysResult.data ?? []) as StayRow[];
-  const inspections = (inspectionsResult.data ?? []) as InspectionRow[];
-  const maintenanceIssues = (maintenanceResult.data ?? []) as MaintenanceRow[];
   const occupiedRoomIds = new Set(stays.map((stay) => stay.room_id));
   const inspectionDueRoomIds = new Set(inspections.map((inspection) => inspection.room_id));
   const maintenanceIssueCountByRoomId: Record<string, number> = {};
@@ -71,15 +62,7 @@ export const getOwnerOverviewData = cache(async function getOwnerOverviewData():
     maintenanceIssues,
     roomNumberById,
   });
-  const paymentRows = (paymentsResult.data ?? []) as PaymentRow[];
-  const paymentTotals = summarizePaymentTotals(paymentRows, today, yesterday);
-  const movement = summarizeOwnerMovement({
-    events: (movementEventsResult.data ?? []) as Array<{ action: string }>,
-    activeStays: stays,
-    payments: paymentRows,
-    now,
-    today,
-  });
+  const { paymentTotals, movement } = statistics;
 
   return {
     inventory,

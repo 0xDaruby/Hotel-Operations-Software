@@ -1,6 +1,6 @@
 # Hotel Operations Engineering Setup
 
-## Current setup — 2026-10-05
+## Current setup — 2026-10-16
 
 This section replaces the historical setup proposal below. The actual runtime is Next.js/React in `apps/web`, Supabase Auth, server actions, PostgreSQL RPCs/RLS, and database pg_cron. NestJS API/worker, domain/contracts, and Prisma remain unused scaffolds; do not duplicate SQL business rules just to populate them.
 
@@ -31,14 +31,18 @@ Prepared and reviewed changes:
 
 **Both were applied live on 2026-10-05 after explicit user approval.** Recorded versions are `20261005221751` and `20261005221801`; live function grants, five enabled tenant guards and RLS were verified. Server-only configuration and authenticated end-to-end verification remain required before releasing account setup. Earlier manually applied changes remain unrecorded; do not use `db push` or bootstrap blindly against the live database.
 
+Pilot hardening migrations `0012_serialize_room_operations.sql` and `0013_owner_statistics.sql` were applied by the user and verified live on 2026-10-16. All eleven function bodies match the local migration bodies after whitespace normalization; function security configuration and execution grants were checked. The Supabase migration ledger still lists only the two October 5 entries, so the installed 0012/0013 SQL is not recorded there. Do not replay those migrations or automatically alter the ledger; reconcile that history separately. The Owner overview uses `get_owner_statistics` when installed; only a missing-RPC response permits complete, checked RLS reads during rolling upgrades. Other errors remain explicit. Both the existing configuration and previous frontend remain compatible. Complete the separate-session PostgreSQL checks and recovery gates in `docs/pilot-readiness.md` before hotel release.
+
 The changes are additive. Frontend rollback to the previous build is compatible; database rollback requires a reviewed forward migration and must preserve audit records. Restoring prior tenant/permission behavior would weaken safeguards.
 
 ### New disposable database
 
+The reviewed replay order and file hashes are captured in `supabase/bootstrap/migration-manifest.json`. Run `node scripts/database-plan.mjs --check` before replay. `node scripts/database-plan.mjs --write-bootstrap clean-bootstrap.local.sql` exports a new SQL bundle without contacting a database or overwriting an existing file. This is for a new disposable Supabase project only; it never upgrades the existing manually bootstrapped live project.
+
 1. Run `supabase/bootstrap/foundation.sql` on a clean Supabase project only. It captures verified tables, enums, indexes, private helpers and RLS without users/property seed data.
 2. Apply historical 0001–0003.
 3. Run `supabase/bootstrap/repair-scheduler.sql` **instead of 0004**, whose original dollar quoting is malformed. Historical files remain immutable.
-4. Apply 0005–0011 in order.
+4. Apply 0005–0013 in order, including room serialization (0012) and owner statistics (0013).
 5. Create the initial Owner, property, and inventory through a privileged administrative session. There is no default password or production seed.
 
 The foundation deliberately fails when tables already exist. Local test replay uses PGlite/PostgreSQL with explicit Supabase Auth and cron metadata shims; actual Auth/pg_cron need live verification. Read-only live cron history confirmed successful daily checks at 07:00 UTC / **08:00 Africa/Lagos** on 1–5 October.
@@ -58,6 +62,8 @@ Owners can cancel pending setup with a reason; old links cannot activate cancell
 ```cmd
 pnpm test
 pnpm test:database
+node --test tests/database-plan.test.mjs
+node scripts/database-plan.mjs --check
 pnpm lint
 pnpm typecheck
 pnpm --dir apps/web build
@@ -73,6 +79,10 @@ Web tests are now discovered/run by a real test script. Database replay uses pin
 `apps/web/wrangler.jsonc` and vinext scripts build the worker; build success is not deployment proof. Before release, configure its server-only admin key, trusted WEB_ORIGIN and public Supabase values, then test auth/setup in that runtime. No deployed URL/health, backup restoration, real email setup, or authenticated device-to-device convergence was verified in this pass.
 
 See `docs/verification/2026-10-05-gap-closure.md` for exact results and remaining configuration/verification. The older proposal below is retained only as historical architectural context.
+
+### First-hotel release and recovery
+
+Follow `docs/pilot-readiness.md` for migration reconciliation, a restore into an isolated disposable target, actual role/device acceptance, shift reconciliation, incident fallback and application rollback. Checklists are pending until dated evidence is captured. On 2026-10-16 PostgreSQL backup tools were unavailable on PATH and Docker's Linux engine was unavailable; no live backup or restore was performed. The manifest and embedded database replay prove local repository behavior only.
 
 ## Historical setup proposal — superseded
 

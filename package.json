@@ -14,6 +14,9 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "test:database": "node tests/database/replay.mjs",
+    "test:recovery": "node --test tests/database-plan.test.mjs",
+    "db:plan": "node scripts/database-plan.mjs",
+    "db:verify-plan": "node scripts/database-plan.mjs --check",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts"

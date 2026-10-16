@@ -1,3 +1,4 @@
+import { readAllRows } from '@/lib/read-all-rows';
 import { createClient } from '@/lib/supabase/server';
 
 type StoredRow = Record<string, unknown>;
@@ -60,22 +61,32 @@ function floorFor(roomNumber: string) {
 }
 
 function naturalRoomOrder(a: HotelRoom, b: HotelRoom) {
-  return a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' });
+  return a.number.localeCompare(b.number, undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
 }
 
 export async function getInventory(): Promise<Inventory> {
   const supabase = await createClient();
-  const [roomsResult, categoriesResult] = await Promise.all([
-    supabase.from('rooms').select('*'),
-    supabase.from('room_categories').select('*'),
+  const [roomRows, categoryRows] = await Promise.all([
+    readAllRows(
+      (from, to) =>
+        supabase.from('rooms').select('*', { count: 'exact' }).order('id', { ascending: true }).range(from, to),
+      'rooms',
+    ),
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('room_categories')
+          .select('*', { count: 'exact' })
+          .order('id', { ascending: true })
+          .range(from, to),
+      'room categories',
+    ),
   ]);
 
-  if (roomsResult.error) throw new Error(`Unable to load rooms: ${roomsResult.error.message}`);
-  if (categoriesResult.error) {
-    throw new Error(`Unable to load room categories: ${categoriesResult.error.message}`);
-  }
-
-  const categories = ((categoriesResult.data ?? []) as StoredRow[])
+  const categories = (categoryRows as StoredRow[])
     .map((row) => ({
       id: stringValue(row, ['id']) ?? '',
       name: stringValue(row, ['name', 'display_name', 'label']) ?? 'Unlabelled category',
@@ -85,7 +96,7 @@ export async function getInventory(): Promise<Inventory> {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
-  const rooms = ((roomsResult.data ?? []) as StoredRow[])
+  const rooms = (roomRows as StoredRow[])
     .map((row) => {
       const categoryId = stringValue(row, ['category_id', 'room_category_id']);
       const category = categoryId ? categoriesById.get(categoryId) : undefined;

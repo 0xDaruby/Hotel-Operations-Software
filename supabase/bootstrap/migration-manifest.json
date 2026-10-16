@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "hashEncoding": "utf8-lf",
+  "purpose": "clean-disposable-supabase-only",
+  "steps": [
+    {
+      "id": "foundation",
+      "file": "supabase/bootstrap/foundation.sql",
+      "sha256": "0c7335183a7d8a99d01a34c9c6574021d3519e63038ae21d746218e933dacd55"
+    },
+    {
+      "id": "0001",
+      "file": "supabase/migrations/0001_foundation_alignment.sql",
+      "sha256": "bb46003019290c24937076aadf4c4d67762a80723f7f53c9bb03d5ab6193375e"
+    },
+    {
+      "id": "0002",
+      "file": "supabase/migrations/0002_stays_payments_departures.sql",
+      "sha256": "a8430ec5f8cfedc27970ff5541ea8b313cd188ba01ec6d7c790f112dc6191eee"
+    },
+    {
+      "id": "0003",
+      "file": "supabase/migrations/0003_inspections_maintenance.sql",
+      "sha256": "3b28487bf8f9c977f2d05e4ab28890ba441b54bb1396795a231bad88b61dd034"
+    },
+    {
+      "id": "0004",
+      "file": "supabase/bootstrap/repair-scheduler.sql",
+      "historicalFile": "supabase/migrations/0004_daily_inspection_scheduler.sql",
+      "sha256": "d52c3a1321e5fd6e40342855718c0c06d077828947f0a25959ed30d9f7ae028c",
+      "historicalSha256": "330c6f7e6e1c150b0b883c3da1bca66139c5af5e42048feae1ef7a2d88424b58"
+    },
+    {
+      "id": "0005",
+      "file": "supabase/migrations/0005_daily_inspection_cron_wrapper.sql",
+      "sha256": "442120d267ceace07108fe8ad0d6dfaaab257c64b2ba5b2095895bd676e1ffec"
+    },
+    {
+      "id": "0006",
+      "file": "supabase/migrations/0006_owner_manager_permissions.sql",
+      "sha256": "cc65681573825bbbc1b625948f03a3ddd71a77d8175fb6bb4e22ac646870264a"
+    },
+    {
+      "id": "0007",
+      "file": "supabase/migrations/0007_database_owned_event_time.sql",
+      "sha256": "f4ba9211ada646436f4902c73618824eccb40164b19c5cdf06f3d539a52197e8"
+    },
+    {
+      "id": "0008",
+      "file": "supabase/migrations/0008_room_categories_read_only.sql",
+      "sha256": "8a56faa3bb5fffd910977913d252df5972a73b77d788880b0a6b89d4dfa1deae"
+    },
+    {
+      "id": "0009",
+      "file": "supabase/migrations/0009_rooms_read_only.sql",
+      "sha256": "5b3718108c628c8e60a18b42b24d60a4c279ce12d05389ffd16979bba6730d27"
+    },
+    {
+      "id": "0010",
+      "file": "supabase/migrations/0010_staff_management.sql",
+      "sha256": "42ee1dcd9bb14d57f2ce05ed4e6316702cbba5ff9901bbb814417dd2456132db"
+    },
+    {
+      "id": "0011",
+      "file": "supabase/migrations/0011_operational_tenant_guards.sql",
+      "sha256": "4760fde0dae0de8bde27162a3da0cda3b2e7a2a7f87579ee64464928117bda67"
+    },
+    {
+      "id": "0012",
+      "file": "supabase/migrations/0012_serialize_room_operations.sql",
+      "sha256": "a92c9f0b6c2a18f57a471c7c5a243badbb3ecfa8141ad9cf455a8a14735a263b"
+    },
+    {
+      "id": "0013",
+      "file": "supabase/migrations/0013_owner_statistics.sql",
+      "sha256": "d1bfc821e8964e50863c36a0829bd76437a09ad191580cca0f75085e65b8f997"
+    }
+  ]
+}

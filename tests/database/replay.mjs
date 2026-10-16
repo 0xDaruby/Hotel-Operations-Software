@@ -5,6 +5,10 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 
+import { verifySerializationContract, verifyPilotLifecycle } from './pilot-lifecycle.mjs';
+import { verifyOwnerStatistics } from './owner-statistics.mjs';
+import { verifyLocalRecovery } from './recovery.mjs';
+
 const root = resolve(import.meta.dirname, '../..');
 const { PGlite } = process.env.PGLITE_MODULE_PATH
   ? await import(pathToFileURL(resolve(process.env.PGLITE_MODULE_PATH)).href)
@@ -55,16 +59,16 @@ try {
   await assert.rejects(db.exec("UPDATE public.rooms SET room_number='changed'"), /permission denied/, 'staff cannot directly alter inventory');
   if (migrations.some(name => name.startsWith('0011_'))) {
     assert.equal((await db.query("SELECT public.room_is_ready('30000000-0000-0000-0000-000000000002') AS ready")).rows[0].ready, false, 'other hotel readiness concealed');
-    await assert.rejects(db.exec("SELECT public.record_arrival('30000000-0000-0000-0000-000000000002','Cross Tenant',null,1,40000)"), /not ready|belong/, 'cross hotel arrival rejected');
+    await assert.rejects(db.exec("SELECT public.record_arrival('30000000-0000-0000-0000-000000000002','Cross Tenant',null,1,40000)"), /not ready|belong|Select a room|destination room/, 'cross hotel arrival rejected');
     await db.exec("RESET ROLE; UPDATE public.staff_profiles SET role='supervisor' WHERE user_id='00000000-0000-0000-0000-000000000001'; SET ROLE authenticated;");
-    await assert.rejects(db.exec("SELECT public.report_maintenance_issue('30000000-0000-0000-0000-000000000002','other','Test')"), /belong|not found|unavailable|Select a room/, 'cross hotel maintenance rejected');
+    await assert.rejects(db.exec("SELECT public.report_maintenance_issue('30000000-0000-0000-0000-000000000002','other','Test')"), /belong|not found|unavailable|Select an active room|Select a room/, 'cross hotel maintenance rejected');
     await db.exec("RESET ROLE; UPDATE public.staff_profiles SET role='receptionist' WHERE user_id='00000000-0000-0000-0000-000000000001'; SET ROLE authenticated;");
   }
   const arrivalSql = "SELECT public.record_arrival('30000000-0000-0000-0000-000000000001','Test Guest',null,1,40000) AS id";
   const arrival = (await db.query(arrivalSql)).rows[0].id;
   assert.ok(arrival, 'arrival creates a stay');
   if (migrations.some(name => name.startsWith('0011_'))) {
-    await assert.rejects(db.query("SELECT public.move_stay($1,'30000000-0000-0000-0000-000000000002','Cross Tenant',1)", [arrival]), /not ready|belong/, 'cross hotel move rejected');
+    await assert.rejects(db.query("SELECT public.move_stay($1,'30000000-0000-0000-0000-000000000002','Cross Tenant',1)", [arrival]), /not ready|belong|Select a room|destination room/, 'cross hotel move rejected');
   }
   assert.equal((await db.query('SELECT id FROM public.stays')).rows.length, 1, 'exactly one stay');
   assert.equal((await db.query('SELECT amount FROM public.payment_records')).rows.length, 1, 'arrival creates one payment');
@@ -118,6 +122,14 @@ try {
     console.log('PASS cancelled setup remains inactive and cannot complete through stale links');
     console.log('PASS staff provisioning, setup gate, client bypass denial, activation, stale state and owner self-protection');
   }
+  await verifySerializationContract(db);
+  await verifyPilotLifecycle(db);
+  await verifyOwnerStatistics(db);
+  // Keep a ready room in the original receptionist's hotel for restore write checks.
+  await db.exec(`RESET ROLE;
+    INSERT INTO public.rooms(id,property_id,category_id,room_number)
+    VALUES ('30000000-0000-0000-0000-000000000099','10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','102');`);
+  await verifyLocalRecovery(db, PGlite);
   const job = (await db.query("SELECT schedule,command FROM cron.job WHERE jobname='daily-inspections'")).rows;
   assert.equal(job.length, 1);
   assert.equal(job[0].schedule, '0 7 * * *');

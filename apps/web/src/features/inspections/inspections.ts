@@ -1,3 +1,4 @@
+import { readAllRows } from '@/lib/read-all-rows';
 import { createClient } from '@/lib/supabase/server';
 
 export type InspectionTrigger = 'departure' | 'daily';
@@ -25,7 +26,8 @@ export async function getOpenInspectionCount(): Promise<number> {
     .neq('status', 'approved');
 
   if (error) throw new Error(`Unable to load open inspection count: ${error.message}`);
-  return count ?? 0;
+  if (count == null) throw new Error('Unable to load complete operational count.');
+  return count;
 }
 
 export function isDailyInspectionDueAt(
@@ -41,19 +43,32 @@ export function isDailyInspectionDueAt(
 
 export async function getInspectionQueue(): Promise<InspectionRequirement[]> {
   const supabase = await createClient();
-  const [{ data: requirementRows, error: requirementError }, { data: roomRows, error: roomError }] = await Promise.all([
-    supabase
-      .from('inspection_requirements')
-      .select('id, room_id, trigger, status, due_at, inspection_day, findings, version')
-      .neq('status', 'approved')
-      .order('due_at', { ascending: true }),
-    supabase.from('rooms').select('id, room_number'),
+  const [requirementRows, roomRows] = await Promise.all([
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('inspection_requirements')
+          .select('id, room_id, trigger, status, due_at, inspection_day, findings, version', { count: 'exact' })
+          .neq('status', 'approved')
+
+          .order('id', { ascending: true })
+          .range(from, to),
+      'inspection requirements',
+    ),
+    readAllRows(
+      (from, to) =>
+        supabase
+          .from('rooms')
+          .select('id, room_number', { count: 'exact' })
+          .order('id', { ascending: true })
+          .range(from, to),
+      'rooms',
+    ),
   ]);
 
-  if (requirementError) throw new Error(`Unable to load inspection requirements: ${requirementError.message}`);
-  if (roomError) throw new Error(`Unable to load rooms: ${roomError.message}`);
-
-  const roomNumberById = new Map((roomRows ?? []).map((room: { id: string; room_number: string }) => [room.id, room.room_number]));
+  const roomNumberById = new Map(
+    (roomRows ?? []).map((room: { id: string; room_number: string }) => [room.id, room.room_number]),
+  );
 
   return ((requirementRows ?? []) as Record<string, unknown>[])
     .map((row) => ({
@@ -67,5 +82,6 @@ export async function getInspectionQueue(): Promise<InspectionRequirement[]> {
       findings: (row.findings as string | null) ?? null,
       version: Number(row.version ?? 1),
     }))
-    .filter((requirement) => requirement.id && requirement.roomId);
+    .filter((requirement) => requirement.id && requirement.roomId)
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt) || a.id.localeCompare(b.id));
 }
