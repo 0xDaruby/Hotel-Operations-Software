@@ -445,7 +445,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   --dock-accent: var(--deep-brown);
   --dock-muted: var(--muted);
   --dock-label-size: 12px;
-  --dock-indicator-size: 4px;
   --dock-transition: 200ms ease;
   --dock-shadow:
     0 1px 2px #302a230a,
@@ -507,17 +506,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   background: #57412f14;
 }
 .mobile-dock-item-active .mobile-dock-icon { color: var(--dock-accent); }
-
-.mobile-dock-indicator {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  width: var(--dock-indicator-size);
-  height: var(--dock-indicator-size);
-  margin-left: calc(var(--dock-indicator-size) / -2);
-  background: var(--dock-accent);
-  border-radius: 50%;
-}
 
 .mobile-dock-more-dots { display: flex; align-items: center; justify-content: center; gap: 3px; height: 20px; }
 .mobile-dock-more-dots i { width: 4px; height: 4px; background: currentColor; border-radius: 50%; }

@@ -55,7 +55,6 @@ export function MobileBottomDock({ docked, overflow, attentionCount, inspectionC
             ) : null}
             <span className="mobile-dock-label">{item.shortLabel}</span>
             {badgeCount === null ? null : <span className="mobile-dock-badge" aria-hidden="true">{badgeCount}</span>}
-            {active ? <span className="mobile-dock-indicator" aria-hidden="true" /> : null}
           </Link>
         );
       })}
