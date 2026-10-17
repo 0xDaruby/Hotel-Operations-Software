@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
-import { Dialog } from '@/components/dialog';
+import { TaskSheet } from '@/components/task-sheet';
 import { formatActivityAction, getActivityContextLabel } from '@/features/activity/activity-view';
 import type { ActivityEvent } from '@/features/activity/activity';
 import { resolveMaintenanceIssueAction } from '@/features/maintenance/actions';
@@ -278,20 +278,25 @@ function ResolveIssueDialog({ issue, onClose }: { issue: OwnerAttentionItem; onC
     setError(null);
     setResolved(null);
     startTransition(async () => {
-      const result = await resolveMaintenanceIssueAction({
-        issueId: issue.id,
-        resolutionDetail,
-        expectedVersion: issue.version ?? 1,
-      });
-      if (result.ok) onClose();
-      else if (result.alreadyResolved) setResolved(result.alreadyResolved);
-      else setError(result.error ?? 'The maintenance issue could not be resolved.');
+      try {
+        const result = await resolveMaintenanceIssueAction({
+          issueId: issue.id,
+          resolutionDetail,
+          expectedVersion: issue.version ?? 1,
+        });
+        if (result.ok) onClose();
+        else if (result.alreadyResolved) setResolved(result.alreadyResolved);
+        else setError(result.error ?? 'The maintenance issue could not be resolved.');
+      } catch {
+        setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');
+      }
     });
   }
 
   return (
-    <Dialog open title={`Resolve room ${issue.roomNumber} issue`} onClose={onClose}>
-      <form className="stay-dialog-form" onSubmit={submit}>
+    <TaskSheet title={`Resolve room ${issue.roomNumber} issue`} onClose={onClose} onSubmit={submit}
+      pending={pending} dirty={!resolved && resolutionDetail !== ''} canSubmit={resolutionDetail.trim() !== ''}
+      closeLabel={resolved ? 'Close' : 'Cancel'} submitLabel={resolved ? undefined : pending ? 'Resolving…' : 'Save resolution'}>
         {resolved ? <p className="form-notice" role="status">Resolved by {resolved.resolvedBy} on {formatLagosDateTime(resolved.resolvedAt)}.</p> : null}
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <p className="dialog-note">This resolves only this issue. Other open issues keep {issue.roomNumber} blocked, and this does not approve room cleanliness.</p>
@@ -299,11 +304,6 @@ function ResolveIssueDialog({ issue, onClose }: { issue: OwnerAttentionItem; onC
           <span>Resolution detail</span>
           <textarea value={resolutionDetail} onChange={(event) => setResolutionDetail(event.target.value)} rows={4} maxLength={250} required />
         </label>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>{resolved ? 'Close' : 'Cancel'}</button>
-          {resolved ? null : <button className="button button-primary" type="submit" disabled={!resolutionDetail.trim() || pending}>{pending ? 'Resolving…' : 'Save resolution'}</button>}
-        </div>
-      </form>
-    </Dialog>
+    </TaskSheet>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { RepairIcon } from '@/components/icons';
-import { Dialog } from '@/components/dialog';
+import { TaskSheet } from '@/components/task-sheet';
 import { formatDateTime } from '@/features/stays/format';
 import { formatLagosDateTime } from '@/features/inventory/owner-overview-time';
 import { reportMaintenanceIssueAction, resolveMaintenanceIssueAction } from './actions';
@@ -153,20 +153,25 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
     setError(null);
     setAlreadyResolved(null);
     startTransition(async () => {
-      const result = await resolveMaintenanceIssueAction({
-        issueId: issue.id,
-        resolutionDetail,
-        expectedVersion: issue.version,
-      });
-      if (result.ok) onClose();
-      else if (result.alreadyResolved) setAlreadyResolved(result.alreadyResolved);
-      else setError(result.error ?? 'The maintenance issue could not be resolved.');
+      try {
+        const result = await resolveMaintenanceIssueAction({
+          issueId: issue.id,
+          resolutionDetail,
+          expectedVersion: issue.version,
+        });
+        if (result.ok) onClose();
+        else if (result.alreadyResolved) setAlreadyResolved(result.alreadyResolved);
+        else setError(result.error ?? 'The maintenance issue could not be resolved.');
+      } catch {
+        setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');
+      }
     });
   }
 
   return (
-    <Dialog open title={`Resolve room ${issue.roomNumber} issue`} onClose={onClose}>
-      <form className="stay-dialog-form" onSubmit={submit}>
+    <TaskSheet title={`Resolve room ${issue.roomNumber} issue`} onClose={onClose} onSubmit={submit}
+      pending={pending} dirty={!alreadyResolved && resolutionDetail !== ''} canSubmit={canSubmit}
+      closeLabel={alreadyResolved ? 'Close' : 'Cancel'} submitLabel={alreadyResolved ? undefined : pending ? 'Resolving…' : 'Save resolution'}>
         {alreadyResolved ? (
           <p className="form-notice" role="status">Resolved by {alreadyResolved.resolvedBy} on {formatLagosDateTime(alreadyResolved.resolvedAt)}.</p>
         ) : null}
@@ -176,11 +181,6 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
           <span>Resolution detail</span>
           <textarea value={resolutionDetail} onChange={(event) => setResolutionDetail(event.target.value)} rows={4} maxLength={250} required />
         </label>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit" disabled={!canSubmit}>{pending ? 'Resolving…' : 'Save resolution'}</button>
-        </div>
-      </form>
-    </Dialog>
+    </TaskSheet>
   );
 }

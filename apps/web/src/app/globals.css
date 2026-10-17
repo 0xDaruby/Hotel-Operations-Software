@@ -247,6 +247,74 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .dialog-note { margin: 0; padding: 12px 14px; color: var(--text-secondary); background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 11px; line-height: 1.6; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
+/* Short operational tasks: focused dialogs on desktop, anchored sheets on mobile. */
+.ops-sheet { max-height: min(760px, calc(100dvh - 48px)); overflow: hidden; }
+.ops-sheet[open] { display: flex; flex-direction: column; animation: inspection-enter .24s ease-out; }
+.ops-sheet .ops-dialog-head { flex: 0 0 auto; padding: 18px 24px 12px; border: 0; }
+.ops-sheet .ops-dialog-head h3 { margin: 0; font: 28px/1.2 var(--display); outline: none; }
+.ops-sheet .ops-dialog-body { display: flex; flex-direction: column; min-height: 0; padding: 0; }
+.inspection-sheet-form { display: flex; flex-direction: column; min-height: 0; }
+.inspection-sheet-fields { overflow-y: auto; overscroll-behavior: contain; padding: 0 24px 24px; scroll-padding-block: 16px; }
+.inspection-sheet-context { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; color: var(--deep-brown); font-size: 12px; font-weight: 600; }
+.inspection-sheet-context span { margin-left: auto; color: var(--text-secondary); font-size: 11px; font-weight: 400; }
+.inspection-sheet-hint { margin-bottom: 24px; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
+.inspection-sheet-inputs { display: grid; gap: 20px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.inspection-sheet-inputs .inventory-field { gap: 8px; }
+.inspection-sheet-inputs select, .inspection-sheet-inputs textarea { font-size: 16px; }
+.inspection-sheet-inputs textarea { min-height: 100px; max-height: 200px; }
+.inspection-sheet-inputs :is(select, textarea):focus-visible { outline: 2px solid var(--brown); outline-offset: 3px; }
+.inspection-add-note { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; color: var(--deep-brown); background: none; border: 0; text-align: left; font-weight: 600; }
+.inspection-add-note span { color: var(--text-secondary); font-size: 12px; font-weight: 400; }
+.inspection-note-count { color: var(--text-secondary); text-align: right; font-size: 11px; }
+.inspection-sheet-inputs .arrival-confirm { align-items: center; gap: 12px; padding: 16px; background: var(--surface-subtle); border-radius: 10px; font-size: 13px; cursor: pointer; }
+.inspection-sheet-inputs .arrival-confirm input { flex: 0 0 auto; width: 20px; height: 20px; margin: 0; }
+.inspection-sheet-footer { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; flex: 0 0 auto; padding: 16px 24px; background: var(--paper); border-top: 1px solid var(--line); }
+.inspection-sheet-footer > .button { grid-column: 2; grid-row: 1; min-height: 48px; }
+.inspection-cancel { min-width: 72px; min-height: 44px; padding: 8px; background: none; border: 0; border-radius: 6px; font-size: 13px; }
+.inspection-sheet-footer > .inspection-cancel { grid-column: 1; grid-row: 1; }
+.task-sheet-form { display: flex; flex-direction: column; min-height: 0; }
+.task-sheet-fields { overflow-y: auto; overscroll-behavior: contain; padding: 4px 24px 24px; scroll-padding-block: 16px; }
+.task-sheet-inputs { display: grid; gap: 20px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.task-sheet-inputs .dialog-note { padding: 0; background: none; border: 0; font-size: 13px; }
+.task-sheet-inputs :is(input, select, textarea) { font-size: 16px; }
+.task-sheet-inputs textarea { max-height: 200px; }
+.task-sheet-inputs :is(input, select, textarea):focus-visible { outline: 2px solid var(--brown); outline-offset: 3px; }
+.task-sheet-footer { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; padding: 16px 24px; background: var(--paper); border-top: 1px solid var(--line); }
+.task-sheet-footer > .button { flex: 1; min-height: 48px; }
+.task-sheet-cancel { min-width: 72px; min-height: 44px; padding: 8px; background: none; border: 0; border-radius: 6px; font-size: 13px; }
+.discard-confirmation { width: min(360px, calc(100vw - 40px)); max-height: calc(100dvh - 40px); margin: auto; padding: 28px 24px 16px; overflow-y: auto; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 20px 64px #302a2333; }
+.discard-confirmation[open] { animation: discard-card-enter .18s ease-out; }
+.discard-confirmation::backdrop { background: #302a2347; backdrop-filter: blur(3px); animation: discard-backdrop-enter .18s ease-out; }
+.discard-confirmation h2 { margin: 0 0 10px; font: 25px/1.2 var(--display); letter-spacing: -.4px; }
+.discard-confirmation p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+.discard-confirmation-actions { display: grid; gap: 6px; margin-top: 24px; }
+.discard-confirmation-actions .button { width: 100%; min-height: 48px; border-radius: 14px; }
+.discard-confirmation-delete { min-height: 44px; padding: 10px; color: var(--status-danger-fg); background: none; border: 0; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.discard-confirmation-delete:hover { background: var(--status-danger-bg); }
+@keyframes discard-card-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes discard-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+.correction-section { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.correction-section legend { margin-bottom: 12px; padding: 0; color: var(--text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.correction-preview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.correction-preview p { display: grid; gap: 4px; }
+.correction-preview span { color: var(--text-secondary); }
+@keyframes inspection-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 760px) {
+  .ops-sheet { position: fixed; inset: var(--sheet-viewport-top, 0px) 0 auto; width: 100%; max-width: none; max-height: calc(var(--sheet-viewport-height, 100dvh) - 16px); margin: 0; top: calc(var(--sheet-viewport-top, 0px) + var(--sheet-viewport-height, 100dvh)); transform: translateY(-100%); border: 0; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 48px #302a2326; }
+  .ops-sheet[open] { animation: inspection-sheet-enter .28s cubic-bezier(.22, 1, .36, 1); }
+  .ops-sheet .ops-dialog-head { padding: 20px 20px 12px; }
+  .ops-sheet .ops-dialog-head h3 { font-size: 26px; }
+  .inspection-sheet-fields { padding-inline: 20px; }
+  .inspection-sheet-footer { padding: 12px 20px max(12px, env(safe-area-inset-bottom)); }
+  .task-sheet-fields { padding-inline: 20px; }
+  .task-sheet-footer { padding: 12px 20px max(12px, env(safe-area-inset-bottom)); }
+  @keyframes inspection-sheet-enter { from { opacity: 0; transform: translateY(-85%); } to { opacity: 1; transform: translateY(-100%); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops-sheet[open] { animation: none; }
+  .discard-confirmation[open], .discard-confirmation::backdrop { animation: none; }
+}
+
 .queue-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .queue-column { display: grid; gap: 10px; min-width: 0; padding: 16px; background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: 10px; }
 .queue-overdue { background: #f3e4de; border-color: #a76d5e66; }

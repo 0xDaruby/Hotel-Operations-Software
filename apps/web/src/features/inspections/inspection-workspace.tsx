@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { TaskDaily02Icon } from '@/components/icons';
 import { Dialog } from '@/components/dialog';
+import { DiscardConfirmation } from '@/components/discard-confirmation';
 import { formatDateTime } from '@/features/stays/format';
 import { submitInspectionAction } from './actions';
 import type { InspectionRequirement } from './inspections';
@@ -90,52 +91,85 @@ function InspectionDialog({ requirement, onClose }: { requirement: InspectionReq
   const [personallyVerified, setPersonallyVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [showFindings, setShowFindings] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const outcomeRef = useRef<HTMLSelectElement>(null);
+  const findingsRef = useRef<HTMLTextAreaElement>(null);
+  const wasConfirming = useRef(false);
   const needsFindings = outcome !== 'approved';
+  const findingsVisible = needsFindings || showFindings || findings !== '';
   const canSubmit = personallyVerified && (!needsFindings || findings.trim() !== '') && !pending;
+
+  useEffect(() => {
+    if (showFindings) findingsRef.current?.focus();
+  }, [showFindings]);
+
+  useEffect(() => {
+    if (wasConfirming.current && !confirmDiscard) outcomeRef.current?.focus();
+    wasConfirming.current = confirmDiscard;
+  }, [confirmDiscard]);
+
+  function requestClose() {
+    if (pending) return;
+    if (findings !== '' || outcome !== 'approved' || personallyVerified) setConfirmDiscard(true);
+    else onClose();
+  }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || confirmDiscard) return;
     setError(null);
     startTransition(async () => {
-      const result = await submitInspectionAction({
-        requirementId: requirement.id,
-        outcome,
-        findings,
-        personallyVerified,
-        expectedVersion: requirement.version,
-      });
-      if (result.ok) onClose();
-      else setError(result.error ?? 'The inspection could not be completed.');
+      try {
+        const result = await submitInspectionAction({
+          requirementId: requirement.id,
+          outcome,
+          findings,
+          personallyVerified,
+          expectedVersion: requirement.version,
+        });
+        if (result.ok) onClose();
+        else setError(result.error ?? 'The inspection could not be completed.');
+      } catch {
+        setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');
+      }
     });
   }
 
   return (
-    <Dialog open title={`Inspect room ${requirement.roomNumber}`} onClose={onClose}>
-      <form className="stay-dialog-form" onSubmit={submit}>
+    <Dialog open title={`Inspect room ${requirement.roomNumber}`} onClose={requestClose} presentation="sheet" closeDisabled={pending}>
+      <form className="inspection-sheet-form" onSubmit={submit} aria-busy={pending}>
+        <div className="inspection-sheet-fields" inert={confirmDiscard}>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        <p className="dialog-note">This is a shared queue. Your signed-in profile is recorded as the completing Supervisor, and the result applies only after your personal verification.</p>
+        <p className="inspection-sheet-context"><TaskDaily02Icon className="icon icon-sm" aria-hidden="true" />{triggerLabel(requirement.trigger)}<span>Shared queue</span></p>
+        <p className="inspection-sheet-hint">This is a shared queue. Record what you personally checked; the outcome is saved under your profile.</p>
+        <fieldset className="inspection-sheet-inputs" disabled={pending}>
         <label className="inventory-field">
           <span>Outcome</span>
-          <select value={outcome} onChange={(event) => setOutcome(event.target.value as Outcome)}>
+          <select ref={outcomeRef} value={outcome} onChange={(event) => setOutcome(event.target.value as Outcome)}>
             <option value="approved">Passed — inspection approved</option>
             <option value="attention">Attention needed</option>
             <option value="access_blocked">Access blocked</option>
           </select>
         </label>
-        <label className="inventory-field">
+        {!findingsVisible ? <button className="inspection-add-note" type="button" onClick={() => setShowFindings(true)}>+ Add findings <span>Optional</span></button> : null}
+        {findingsVisible ? <label className="inventory-field">
           <span>{needsFindings ? 'Reason' : 'Findings (optional)'}</span>
-          <textarea value={findings} onChange={(event) => setFindings(event.target.value)} rows={4} maxLength={250} required={needsFindings} />
-        </label>
+          <textarea ref={findingsRef} value={findings} onChange={(event) => setFindings(event.target.value)} rows={3} maxLength={250} required={needsFindings} placeholder={needsFindings ? 'What needs attention, or why was access blocked?' : 'Add anything the team should know…'} />
+          <span className="inspection-note-count">{findings.length}/250</span>
+        </label> : null}
         <label className="arrival-confirm">
           <input type="checkbox" checked={personallyVerified} onChange={(event) => setPersonallyVerified(event.target.checked)} />
           <span>Personally verified: this outcome reflects my direct inspection of room {requirement.roomNumber}.</span>
         </label>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>Cancel</button>
+        </fieldset>
+        </div>
+        <div className="inspection-sheet-footer" inert={confirmDiscard}>
           <button className="button button-primary" type="submit" disabled={!canSubmit}>{pending ? 'Saving…' : 'Save outcome'}</button>
+          <button className="inspection-cancel" type="button" disabled={pending} onClick={requestClose}>Cancel</button>
         </div>
       </form>
+      {confirmDiscard ? <DiscardConfirmation title="Discard this inspection?" onKeepEditing={() => setConfirmDiscard(false)} onDiscard={onClose} /> : null}
     </Dialog>
   );
 }

@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { UserCheck01Icon } from '@/components/icons';
 import { useState, useTransition } from 'react';
 import { Dialog } from '@/components/dialog';
+import { TaskSheet } from '@/components/task-sheet';
+import { formatLagosDateTime } from '@/features/inventory/owner-overview-time';
 import {
   confirmDepartureAction,
   correctStayAction,
@@ -33,12 +35,16 @@ function useAction(onDone: () => void) {
   function run(fn: () => Promise<ActionResult>) {
     setError(null);
     startTransition(async () => {
-      const result = await fn();
-      if (result.ok) {
-        router.refresh();
-        onDone();
-      } else {
-        setError(result.error ?? 'The operation could not be completed.');
+      try {
+        const result = await fn();
+        if (result.ok) {
+          router.refresh();
+          onDone();
+        } else {
+          setError(result.error ?? 'The operation could not be completed.');
+        }
+      } catch {
+        setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');
       }
     });
   }
@@ -128,8 +134,9 @@ function ExtendDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const { pending, error, run } = useAction(onClose);
 
   return (
-    <Dialog open title={`Extend stay — ${stay.roomNumber}`} onClose={onClose}>
-      <form className="stay-dialog-form" onSubmit={(event) => { event.preventDefault(); run(() => extendStayAction({ stayId: stay.id, addedDays: days, expectedAmount: amount, expectedVersion: stay.version })); }}>
+    <TaskSheet title={`Extend stay — ${stay.roomNumber}`} onClose={onClose} pending={pending} dirty={addedDays !== 1}
+      submitLabel={pending ? 'Extending…' : 'Record extension'}
+      onSubmit={(event) => { event.preventDefault(); run(() => extendStayAction({ stayId: stay.id, addedDays: days, expectedAmount: amount, expectedVersion: stay.version })); }}>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <p className="dialog-note">Extension is charged at the original daily rate ({formatNaira(stay.originalDailyRate)}) and recorded as a separate extension payment on today&apos;s date.</p>
         <Field label="Additional days">
@@ -139,12 +146,7 @@ function ExtendDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
           <p><span>Extension charge</span><strong>{formatNaira(amount)}</strong></p>
           <p><span>New deadline</span><strong>{formatDateLabel(deadlineFrom(stay.departureDueAt, days))}</strong></p>
         </div>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit" disabled={pending}>{pending ? 'Extending…' : 'Record extension'}</button>
-        </div>
-      </form>
-    </Dialog>
+    </TaskSheet>
   );
 }
 
@@ -156,8 +158,9 @@ function MoveDialog({ stay, readyRooms, onClose }: { stay: Stay; readyRooms: Rea
   const target = candidates.find((room) => room.id === toRoomId) ?? null;
 
   return (
-    <Dialog open title={`Move stay — ${stay.roomNumber}`} onClose={onClose}>
-      <form className="stay-dialog-form" onSubmit={(event) => { event.preventDefault(); if (!target) return; run(() => moveStayAction({ stayId: stay.id, toRoomId: target.id, reason, expectedVersion: stay.version })); }}>
+    <TaskSheet title={`Move stay — ${stay.roomNumber}`} onClose={onClose} pending={pending} dirty={toRoomId !== '' || reason !== ''}
+      canSubmit={Boolean(target) && reason.trim() !== ''} submitLabel={pending ? 'Moving…' : 'Move stay'}
+      onSubmit={(event) => { event.preventDefault(); if (!target) return; run(() => moveStayAction({ stayId: stay.id, toRoomId: target.id, reason, expectedVersion: stay.version })); }}>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <p className="dialog-note">The vacated room is sent to inspection before it can be sold again.</p>
         <Field label="New room">
@@ -171,46 +174,52 @@ function MoveDialog({ stay, readyRooms, onClose }: { stay: Stay; readyRooms: Rea
         <Field label="Reason for move">
           <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} required />
         </Field>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit" disabled={!target || reason.trim() === '' || pending}>{pending ? 'Moving…' : 'Move stay'}</button>
-        </div>
-      </form>
-    </Dialog>
+    </TaskSheet>
   );
 }
 
 function CorrectDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const [guestName, setGuestName] = useState(stay.guestName);
   const [guestPhone, setGuestPhone] = useState(stay.guestPhone ?? '');
-  const [paidDays, setPaidDays] = useState(stay.paidDays);
+  const [paidDays, setPaidDays] = useState(String(stay.paidDays));
   const [reason, setReason] = useState('');
   const { pending, error, run } = useAction(onClose);
-  const days = Number.isFinite(paidDays) ? Math.max(1, Math.min(30, Math.trunc(paidDays))) : stay.paidDays;
+  const days = Number(paidDays);
+  const validDays = paidDays.trim() !== '' && Number.isInteger(days) && days >= 1 && days <= 30;
+  const detailsChanged = guestName.trim() !== stay.guestName.trim() || guestPhone.trim() !== (stay.guestPhone ?? '').trim();
+  const daysChanged = validDays && days !== stay.paidDays;
+  const canSubmit = validDays && (detailsChanged || daysChanged) && guestName.trim() !== '' && reason.trim() !== '';
+  const dirty = guestName !== stay.guestName || guestPhone !== (stay.guestPhone ?? '') || paidDays !== String(stay.paidDays) || reason !== '';
 
   return (
-    <Dialog open title={`Correct stay — ${stay.roomNumber}`} onClose={onClose}>
-      <form className="stay-dialog-form" onSubmit={(event) => { event.preventDefault(); run(() => correctStayAction({ stayId: stay.id, guestName, guestPhone, paidDays: days, reason, expectedVersion: stay.version })); }}>
+    <TaskSheet title={`Correct stay — ${stay.roomNumber}`} onClose={onClose} pending={pending} dirty={dirty}
+      canSubmit={canSubmit} submitLabel={pending ? 'Saving…' : 'Save correction'}
+      onSubmit={(event) => { event.preventDefault(); if (!canSubmit) return; run(() => correctStayAction({ stayId: stay.id, guestName, guestPhone, paidDays: days, reason, expectedVersion: stay.version })); }}>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        <p className="dialog-note">Corrections are attributed to you and never alter recorded payment rows.</p>
+        <p className="dialog-note">Corrections are recorded under your profile. Payment records remain unchanged.</p>
+        <fieldset className="correction-section">
+        <legend>Guest details</legend>
         <Field label="Guest name">
           <input value={guestName} onChange={(event) => setGuestName(event.target.value)} required />
         </Field>
         <Field label="Guest phone (optional)">
-          <input value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} />
+          <input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} />
         </Field>
+        </fieldset>
+        <fieldset className="correction-section">
+        <legend>Stay duration</legend>
         <Field label="Paid days">
-          <input type="number" min={1} max={30} step={1} value={paidDays} onChange={(event) => setPaidDays(Number(event.target.value))} required />
+          <input type="number" min={1} max={30} step={1} value={paidDays} onChange={(event) => setPaidDays(event.target.value)} required />
         </Field>
+        {daysChanged ? <div className="arrival-preview correction-preview" aria-live="polite">
+          <p><span>Current deadline</span><strong>{formatLagosDateTime(stay.departureDueAt)}</strong></p>
+          <p><span>Revised deadline</span><strong>{formatLagosDateTime(deadlineFrom(stay.arrivalAt, days))}</strong></p>
+        </div> : null}
+        </fieldset>
         <Field label="Reason for correction">
-          <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} required />
+          <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="What was entered incorrectly?" required />
         </Field>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit" disabled={guestName.trim() === '' || reason.trim() === '' || pending}>{pending ? 'Saving…' : 'Save correction'}</button>
-        </div>
-      </form>
-    </Dialog>
+    </TaskSheet>
   );
 }
 
