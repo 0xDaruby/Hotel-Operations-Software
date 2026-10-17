@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BellDotIcon } from '@/components/icons';
+import { HistoryIcon } from '@/components/icons';
 import type { ActivityEvent } from './activity';
 import { formatActivityAction, getActivityCategory, getActivityContextLabel } from './activity-view';
 import type { ActivityCategory, ActivityDayGroup, ActivityFilter } from './activity-view';
@@ -71,7 +71,7 @@ export function ActivityFeed({ groups, eventCount }: Props) {
               <div className="activity-list">
                 {group.events.map((event) => (
                   <article className="activity-item" key={event.id}>
-                    <BellDotIcon className="icon icon-md activity-dot" aria-hidden="true" />
+                    <HistoryIcon className="icon icon-md activity-dot" aria-hidden="true" />
                     <div className="activity-copy">
                       <strong>{formatActivityAction(event.action)}</strong>
                       <p>{getActivityContextLabel({ roomNumber: event.roomNumber, guestName: event.guestName })}</p>

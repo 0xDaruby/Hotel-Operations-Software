@@ -24,15 +24,13 @@ export function UserListIcon({ size = 24, ...props }: IconProps) {
   );
 }
 
-export function HourglassOffIcon({ size = 24, ...props }: IconProps) {
+// Hugeicons Stroke Rounded, MIT. See NOTICE.md for source and license.
+export function DepartureIcon({ size = 24, ...props }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5">
-        <path d="M7 3H20" />
-        <path d="M5.5 21V18.9696C5.5 17.7277 6.07682 16.5563 7.06116 15.7991L12 12" />
-        <path d="M4 21H21" />
-        <path d="M2 2L22 22" />
-        <path d="M18.5 3V5.03039C18.5 6.27227 17.9232 7.4437 16.9388 8.20089L14.2609 10.2609" />
+        <path d="M15.5 8.04045C15.4588 6.87972 15.3216 6.15451 14.8645 5.58671C14.2114 4.77536 13.0944 4.52064 10.8605 4.01121L9.85915 3.78286C6.4649 3.00882 4.76777 2.6218 3.63388 3.51317C2.5 4.40454 2.5 6.1257 2.5 9.56803V14.432C2.5 17.8743 2.5 19.5955 3.63388 20.4868C4.76777 21.3782 6.4649 20.9912 9.85915 20.2171L10.8605 19.9888C13.0944 19.4794 14.2114 19.2246 14.8645 18.4133C15.3216 17.8455 15.4588 17.1203 15.5 15.9595" />
+        <path d="M18.5 9.01172C18.5 9.01172 21.5 11.2212 21.5 12.0117C21.5 12.8023 18.5 15.0117 18.5 15.0117M21 12.0117H8.49998" />
       </g>
     </svg>
   );
@@ -51,13 +49,13 @@ export function RepairIcon({ size = 24, ...props }: IconProps) {
   );
 }
 
-export function BellDotIcon({ size = 24, ...props }: IconProps) {
+export function HistoryIcon({ size = 24, ...props }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5">
-        <path d="M19 11v1.7558c0 .7956.3161 1.5587.8787 2.1213l.6032.6032c.3317.3318.5181.7817.5181 1.2508 0 .9769-.792 1.7689-1.7689 1.7689H4.7689C3.792 18.5 3 17.708 3 16.7311c0-.4691.1864-.919.5181-1.2508l.6032-.6032C4.6839 14.315 5 13.5514 5 12.7558V10c0-3.866 3.134-7 7-7" />
-        <path d="M15.5 18.5c0 1.933-1.567 3.5-3.5 3.5s-3.5-1.567-3.5-3.5" />
-        <circle cx="18" cy="5" r="3" />
+        <path d="M3.49902 14.9656C4.72475 18.4791 8.06749 21 11.999 21C16.9696 21 20.999 16.9706 20.999 12C20.999 7.02944 16.9696 3 11.999 3C8.29827 3 4.8984 5.6756 3.68943 8.5" />
+        <path d="M11.999 7V12L14.999 14" />
+        <path d="M7.49751 8.74363C7.49751 8.74363 3.81388 9.3026 3.25487 8.7436C2.69585 8.1846 3.25488 4.50098 3.25488 4.50098" />
       </g>
     </svg>
   );

@@ -26,9 +26,17 @@ test('non-owner mobile dock destinations remain unchanged', () => {
 });
 
 test('badge counts are loaded for every role with the corresponding dock destination', () => {
-  assert.deepEqual(getDockBadgeRequirements('owner'), { overview: true, inspections: true, maintenance: true });
-  assert.deepEqual(getDockBadgeRequirements('receptionist'), { overview: false, inspections: false, maintenance: true });
-  assert.deepEqual(getDockBadgeRequirements('supervisor'), { overview: false, inspections: true, maintenance: true });
+  assert.deepEqual(getDockBadgeRequirements('owner'), { overview: true, inspections: true, maintenance: true, departures: false });
+  assert.deepEqual(getDockBadgeRequirements('receptionist'), { overview: false, inspections: false, maintenance: true, departures: true });
+  assert.deepEqual(getDockBadgeRequirements('supervisor'), { overview: false, inspections: true, maintenance: true, departures: false });
+});
+
+test('departure badge uses live supplied count and hides zero or unavailable counts', () => {
+  assert.equal(getDockAttentionBadgeCount('/departure-due', 9, 2, 3, 5), 5);
+  assert.equal(getDockAttentionBadgeCount('/departure-due', 9, 2, 3, 0), null);
+  assert.equal(getDockAttentionBadgeCount('/departure-due', 9, 2, 3), null);
+  assert.equal(getDockAttentionBadgeCount('/maintenance', 9, 2, 3, 5), 3);
+  assert.equal(getDockAttentionBadgeCount('/overview', 9, 2, 3, 5), 9);
 });
 
 test('attention count badge is attached only to the Overview dock destination', () => {

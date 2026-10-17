@@ -14,6 +14,7 @@ export type MobileBottomDockProps = {
   attentionCount: number;
   inspectionCount: number | null;
   maintenanceCount: number | null;
+  departureCount: number | null;
 };
 
 /**
@@ -21,7 +22,7 @@ export type MobileBottomDockProps = {
  * driven entirely by the current route for its active state. Holds at most
  * six elements: the docked destinations plus an optional Menu control.
  */
-export function MobileBottomDock({ docked, overflow, attentionCount, inspectionCount, maintenanceCount, onOpenMenu }: MobileBottomDockProps) {
+export function MobileBottomDock({ docked, overflow, attentionCount, inspectionCount, maintenanceCount, departureCount, onOpenMenu }: MobileBottomDockProps) {
   const pathname = usePathname();
 
   if (docked.length === 0) return null;
@@ -32,7 +33,7 @@ export function MobileBottomDock({ docked, overflow, attentionCount, inspectionC
     <nav className="mobile-dock" aria-label="Primary">
       {docked.map((item) => {
         const active = pathname === item.href;
-        const badgeCount = getDockAttentionBadgeCount(item.href, attentionCount, inspectionCount, maintenanceCount);
+        const badgeCount = getDockAttentionBadgeCount(item.href, attentionCount, inspectionCount, maintenanceCount, departureCount);
         const Icon = item.icon;
         return (
           <Link
@@ -46,7 +47,9 @@ export function MobileBottomDock({ docked, overflow, attentionCount, inspectionC
                 ? `${item.label}, ${badgeCount} open ${badgeCount === 1 ? 'inspection' : 'inspections'}`
                 : item.href === '/maintenance'
                   ? `${item.shortLabel}, ${badgeCount} open ${badgeCount === 1 ? 'maintenance issue' : 'maintenance issues'}`
-                  : `Overview, ${badgeCount} items need attention`}
+                  : item.href === '/departure-due'
+                    ? `Depart, ${badgeCount} ${badgeCount === 1 ? 'stay' : 'stays'} overdue or due within 24 hours`
+                    : `Overview, ${badgeCount} items need attention`}
           >
             {Icon ? (
               <span className="mobile-dock-icon" aria-hidden="true">

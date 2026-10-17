@@ -3,10 +3,10 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
-  BellDotIcon,
+  HistoryIcon,
   Home04Icon,
   Hotel02Icon,
-  HourglassOffIcon,
+  DepartureIcon,
   Menu02Icon,
   RepairIcon,
   TaskDaily02Icon,
@@ -17,10 +17,10 @@ import {
 } from './index';
 
 const icons = [
-  BellDotIcon,
+  HistoryIcon,
   Home04Icon,
   Hotel02Icon,
-  HourglassOffIcon,
+  DepartureIcon,
   Menu02Icon,
   RepairIcon,
   TaskDaily02Icon,

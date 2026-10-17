@@ -18,12 +18,13 @@ const roleLabels: Record<StaffRole, string> = {
   supervisor: 'Supervisor',
 };
 
-export function OperationsShell({ children, profile, attentionCount, inspectionCount, maintenanceCount }: {
+export function OperationsShell({ children, profile, attentionCount, inspectionCount, maintenanceCount, departureCount }: {
   children: ReactNode;
   profile: StaffProfile;
   attentionCount: number;
   inspectionCount: number | null;
   maintenanceCount: number | null;
+  departureCount: number | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -194,6 +195,7 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
         attentionCount={attentionCount}
         inspectionCount={inspectionCount}
         maintenanceCount={maintenanceCount}
+        departureCount={departureCount}
         onOpenMenu={() => setMenuOpen(true)}
       />
     </>

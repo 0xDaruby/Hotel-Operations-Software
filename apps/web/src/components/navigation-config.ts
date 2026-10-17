@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import {
-  BellDotIcon,
+  HistoryIcon,
   Home04Icon,
   Hotel02Icon,
-  HourglassOffIcon,
+  DepartureIcon,
   RepairIcon,
   TaskDaily02Icon,
   UserCheck01Icon,
@@ -31,11 +31,11 @@ export const navigation: NavigationEntry[] = [
   { href: '/overview', label: 'Hotel Overview', shortLabel: 'Overview', icon: Home04Icon, roles: ['owner'], eyebrow: '', subtitle: '' },
   { href: '/rooms', label: 'Room board', shortLabel: 'Rooms', icon: Hotel02Icon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: '', subtitle: 'Occupancy, readiness, and maintenance — together.' },
   { href: '/stays', label: 'Guest stays', shortLabel: 'Stays', icon: UserCheck01Icon, roles: ['owner', 'receptionist'], eyebrow: 'Walk-in operations', subtitle: 'Arrivals, continuous stays, extensions, and departures.' },
-  { href: '/departure-due', label: 'Departure due', shortLabel: 'Depart', icon: HourglassOffIcon, roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
+  { href: '/departure-due', label: 'Departure due', shortLabel: 'Depart', icon: DepartureIcon, roles: ['owner', 'receptionist'], eyebrow: 'Reception attention', subtitle: 'Review deadlines without making rooms vacant automatically.' },
   { href: '/inspections', label: 'Inspections', shortLabel: 'Inspect', icon: TaskDaily02Icon, roles: ['owner', 'supervisor'], eyebrow: '', subtitle: '' },
   { href: '/maintenance', label: 'Maintenance', shortLabel: 'Fix-It', icon: RepairIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Rooms needing attention', subtitle: 'See open issues and the rooms they block.' },
   { href: '/payments', label: 'Payments', shortLabel: 'Pay', icon: Wallet02Icon, roles: ['owner'], eyebrow: 'Operational money view', subtitle: 'Staff-recorded payments grouped by the day received.' },
-  { href: '/activity', label: 'Activity', shortLabel: 'Activity', icon: BellDotIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
+  { href: '/activity', label: 'Activity log', shortLabel: 'History', icon: HistoryIcon, roles: ['owner', 'receptionist', 'supervisor'], eyebrow: 'Attributed history', subtitle: 'One shared record of who changed what and when.' },
   { href: '/staff', label: 'Staff', shortLabel: 'Staff', icon: UserListIcon, roles: ['owner'], eyebrow: 'Owner access', subtitle: 'Review hotel staff profiles and account access.' },
 ];
 
@@ -48,10 +48,12 @@ export function getDockAttentionBadgeCount(
   attentionCount: number,
   inspectionCount: number | null = null,
   maintenanceCount: number | null = null,
+  departureCount: number | null = null,
 ): number | null {
   if (href === '/overview') return attentionCount > 0 ? attentionCount : null;
   if (href === '/inspections') return inspectionCount !== null && inspectionCount > 0 ? inspectionCount : null;
   if (href === '/maintenance') return maintenanceCount !== null && maintenanceCount > 0 ? maintenanceCount : null;
+  if (href === '/departure-due') return departureCount !== null && departureCount > 0 ? departureCount : null;
   return null;
 }
 
@@ -86,6 +88,7 @@ export type DockBadgeRequirements = {
   overview: boolean;
   inspections: boolean;
   maintenance: boolean;
+  departures: boolean;
 };
 
 export function getDockBadgeRequirements(role: StaffRole): DockBadgeRequirements {
@@ -94,5 +97,6 @@ export function getDockBadgeRequirements(role: StaffRole): DockBadgeRequirements
     overview: destinations.has('/overview'),
     inspections: destinations.has('/inspections'),
     maintenance: destinations.has('/maintenance'),
+    departures: destinations.has('/departure-due'),
   };
 }
