@@ -1,94 +1,88 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { HistoryIcon } from '@/components/icons';
-import type { ActivityEvent } from './activity';
-import { formatActivityAction, getActivityCategory, getActivityContextLabel } from './activity-view';
-import type { ActivityCategory, ActivityDayGroup, ActivityFilter } from './activity-view';
+import type { ActivityEvent, getActivityHistoryPage } from './activity';
+import { formatActivityAction, getActivityContextLabel, groupActivityEventsByDate } from './activity-view';
+import { getActivityDetails } from './activity-details';
+import { ActivityEventDetails } from './activity-event-details';
+import { activityFilters } from './activity-query';
+import type { HistoryFilters } from './activity-query';
+import { loadOlderActivity } from './history-actions';
 
-type DisplayEvent = ActivityEvent & { formattedCreatedAt: string };
-type DisplayGroup = Omit<ActivityDayGroup, 'events'> & { events: DisplayEvent[] };
+type Page = Awaited<ReturnType<typeof getActivityHistoryPage>>;
+const filterLabels = { all: 'All activity', stays: 'Stays', inspections: 'Inspections', maintenance: 'Maintenance', other: 'Other' };
 
-type Props = {
-  groups: DisplayGroup[];
-  eventCount: number;
-};
+export function ActivityFeed({ initialPage, filters, filterError }: { initialPage: Page; filters: HistoryFilters; filterError?: string }) {
+  const [snapshot, setSnapshot] = useState(initialPage);
+  const [older, setOlder] = useState<ActivityEvent[]>([]);
+  const [pagination, setPagination] = useState<{ cursor: Page['nextCursor'] } | null>(null);
+  const [error, setError] = useState('');
+  const [pending, startTransition] = useTransition();
+  const loading = useRef(false);
+  const events = [...new Map([...snapshot.events, ...older].map(event => [event.id, event])).values()]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+  const groups = groupActivityEventsByDate(events);
+  const cursor = pagination ? pagination.cursor : snapshot.nextCursor;
 
-const filterLabels: Record<ActivityFilter, string> = {
-  all: 'All activity',
-  stays: 'Stays',
-  inspections: 'Inspections',
-  maintenance: 'Maintenance',
-  other: 'Other',
-};
+  function loadOlder() {
+    if (!cursor || loading.current) return;
+    loading.current = true;
+    setError('');
+    startTransition(async () => {
+      try {
+        const result = await loadOlderActivity(filters, cursor);
+        if (result.page) {
+          setOlder(previous => [...previous, ...result.page.events]);
+          setPagination({ cursor: result.page.nextCursor });
+        } else setError(result.error ?? 'Could not load older activity. Please try again.');
+      } catch {
+        setError('Could not load older activity. Please try again.');
+      } finally { loading.current = false; }
+    });
+  }
 
-export function ActivityFeed({ groups, eventCount }: Props) {
-  const [activeFilter, setActiveFilter] = useState<ActivityFilter>('all');
-  const allEvents = groups.flatMap((group) => group.events);
-  const hasOtherEvents = allEvents.some((event) => getActivityCategory(event.action) === 'other');
-  const filters: ActivityFilter[] = ['all', 'stays', 'inspections', 'maintenance'];
-  if (hasOtherEvents) filters.push('other');
-
-  const visibleGroups = groups
-    .map((group) => ({
-      ...group,
-      events: group.events.filter((event) => (
-        activeFilter === 'all' || getActivityCategory(event.action) === activeFilter
-      )),
-    }))
-    .filter((group) => group.events.length > 0);
-  const visibleCount = visibleGroups.reduce((total, group) => total + group.events.length, 0);
-
-  return (
-    <div className="activity-browser">
-      <div className="activity-toolbar">
-        <p className="activity-count" aria-live="polite">
-          Showing <strong>{visibleCount}</strong> of {eventCount} recent {eventCount === 1 ? 'event' : 'events'}
-        </p>
-        <div className="activity-filters" role="group" aria-label="Filter activity by type">
-          {filters.map((filter) => (
-            <button
-              aria-pressed={activeFilter === filter}
-              className="activity-filter"
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              type="button"
-            >
-              {filterLabels[filter]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {visibleGroups.length ? (
-        <div className="activity-groups" aria-live="polite">
-          {visibleGroups.map((group) => (
-            <section className="activity-day" key={group.key} aria-labelledby={`activity-day-${group.key}`}>
-              <header className="activity-day-heading">
-                <h3 id={`activity-day-${group.key}`}>{group.label}</h3>
-                <span>{group.events.length} {group.events.length === 1 ? 'event' : 'events'}</span>
-              </header>
-              <div className="activity-list">
-                {group.events.map((event) => (
-                  <article className="activity-item" key={event.id}>
-                    <HistoryIcon className="icon icon-md activity-dot" aria-hidden="true" />
-                    <div className="activity-copy">
-                      <strong>{formatActivityAction(event.action)}</strong>
-                      <p>{getActivityContextLabel({ roomNumber: event.roomNumber, guestName: event.guestName })}</p>
-                      <small>{event.actorName} · {event.formattedCreatedAt}</small>
-                      {event.reason ? <p className="activity-reason">Reason: {event.reason}</p> : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div className="activity-filter-empty" role="status">
-          No {filterLabels[activeFilter].toLowerCase()} in the recent activity.
-        </div>
-      )}
+  return <div className="activity-browser">
+    <div className="activity-toolbar">
+      <nav className="activity-filters" aria-label="Filter activity by type">
+        {activityFilters.map(category => {
+          const params = new URLSearchParams({ ...filters, category });
+          return <Link className="activity-filter" aria-current={filters.category === category ? 'page' : undefined} href={`/activity?${params}`} key={category}>{filterLabels[category]}</Link>;
+        })}
+      </nav>
+      <form action="/activity" className="activity-date-filter">
+        <input type="hidden" name="category" value={filters.category} />
+        <label>From<input aria-label="Activity from date" name="from" type="date" defaultValue={filters.from} /></label>
+        <label>To<input aria-label="Activity to date" name="to" type="date" defaultValue={filters.to} /></label>
+        <button className="activity-filter activity-apply" type="submit">Apply dates</button>
+        {filters.from || filters.to ? <Link className="activity-reset" href={`/activity?category=${filters.category}`}>Clear dates</Link> : null}
+      </form>
     </div>
-  );
+    {filterError ? <p role="alert">{filterError}</p> : null}
+    {initialPage.events[0]?.id !== snapshot.events[0]?.id ? <button className="activity-load-more" disabled={pending} onClick={() => { setSnapshot(initialPage); setOlder([]); setPagination(null); setError(''); }} type="button">New activity available · Refresh</button> : null}
+    <p className="activity-count" role="status">{events.length ? `Showing ${events.length} ${events.length === 1 ? 'event' : 'events'} · Newest first` : 'No activity matches these filters.'}</p>
+    <div className="activity-groups">
+      {groups.map(group => <section className="activity-day" key={group.key} aria-labelledby={`activity-day-${group.key}`}>
+        <header className="activity-day-heading"><h2 id={`activity-day-${group.key}`}>{group.label}</h2></header>
+        <div className="activity-list">{group.events.map(event => {
+          const details = getActivityDetails(event);
+          return <article className="activity-item" key={event.id}>
+            <HistoryIcon className="icon icon-md activity-dot" aria-hidden="true" />
+            <div className="activity-copy">
+              <div className="activity-row-title"><strong>{formatActivityAction(event.action)}</strong><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })}</time></div>
+              <p>{getActivityContextLabel(event)}</p>
+              <small>{event.actorName}</small>
+              {details.note || details.items.length ? <details className="activity-details">
+                <summary>View details<span className="sr-only"> for {formatActivityAction(event.action)}, {getActivityContextLabel(event)}</span></summary>
+                <ActivityEventDetails details={details} />
+              </details> : null}
+            </div>
+          </article>;
+        })}</div>
+      </section>)}
+    </div>
+    {error ? <p role="alert">{error}</p> : null}
+    {events.length ? <button className="activity-load-more" onClick={loadOlder} aria-disabled={!cursor || pending} type="button">{pending ? 'Loading older activity…' : cursor ? 'Load older activity' : 'All activity loaded'}</button> : null}
+  </div>;
 }

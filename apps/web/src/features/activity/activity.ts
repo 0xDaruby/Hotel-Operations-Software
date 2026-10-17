@@ -1,5 +1,7 @@
 import { readAllRows } from '@/lib/read-all-rows';
 import { createClient } from '@/lib/supabase/server';
+import { ACTIVITY_PAGE_SIZE, activityCursorFilter, historyDateBounds, parseHistoryFilters } from './activity-query';
+import type { ActivityCursor, HistoryFilters } from './activity-query';
 
 export type ActivityEvent = {
   id: string;
@@ -12,16 +14,27 @@ export type ActivityEvent = {
   details: Record<string, unknown> | null;
 };
 
-export async function getActivityFeed(limit = 50): Promise<ActivityEvent[]> {
+export async function getActivityFeed(limit = 50, filters?: HistoryFilters, cursor?: ActivityCursor): Promise<ActivityEvent[]> {
   const supabase = await createClient();
   const requestedLimit = Math.max(0, Math.floor(limit));
   if (!Number.isFinite(requestedLimit)) throw new Error('Invalid activity limit.');
   if (requestedLimit === 0) return [];
-  const result = await supabase
+  let query = supabase
     .from('activity_events')
     .select('id, action, actor_name, room_id, stay_id, reason, created_at, before_facts, after_facts', {
       count: 'exact',
-    })
+    });
+  if (filters) {
+    const valid = parseHistoryFilters(filters);
+    const domain = { stays: 'stay.%', inspections: 'inspection.%', maintenance: 'maintenance.%' };
+    if (valid.category === 'other') query = query.not('action', 'like', 'stay.%').not('action', 'like', 'inspection.%').not('action', 'like', 'maintenance.%');
+    else if (valid.category !== 'all') query = query.like('action', domain[valid.category]);
+    const bounds = historyDateBounds(valid);
+    if (bounds.from) query = query.gte('created_at', bounds.from);
+    if (bounds.to) query = query.lt('created_at', bounds.to);
+  }
+  if (cursor) query = query.or(activityCursorFilter(cursor));
+  const result = await query
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .range(0, requestedLimit - 1);
@@ -86,4 +99,11 @@ export async function getActivityFeed(limit = 50): Promise<ActivityEvent[]> {
       details,
     };
   });
+}
+
+export async function getActivityHistoryPage(filters: HistoryFilters, cursor?: ActivityCursor) {
+  const rows = await getActivityFeed(ACTIVITY_PAGE_SIZE + 1, filters, cursor);
+  const events = rows.slice(0, ACTIVITY_PAGE_SIZE);
+  const last = events.at(-1);
+  return { events, nextCursor: rows.length > ACTIVITY_PAGE_SIZE && last ? { id: last.id, createdAt: last.createdAt } : null };
 }

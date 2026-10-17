@@ -67,7 +67,6 @@ export function RoomBoard({
     <section aria-labelledby="room-board-heading">
       <div className="inventory-intro">
         <div>
-          <p className="eyebrow">Permanent inventory</p>
           <h2 id="room-board-heading">{visibleRooms.length} of {rooms.length} rooms</h2>
         </div>
       </div>

@@ -31,7 +31,6 @@ export function MaintenanceWorkspace({ issues, rooms, canReport, canResolve }: M
       <section className="maintenance-main" aria-labelledby="maintenance-issues-heading">
         <div className="inventory-intro">
           <div>
-            <p className="eyebrow">Maintenance operations</p>
             <h2 id="maintenance-issues-heading">{issues.length} open {issues.length === 1 ? 'issue' : 'issues'}</h2>
           </div>
         </div>
@@ -112,7 +111,6 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
   return (
     <form className="arrival-form" onSubmit={submit}>
       <div>
-        <p className="eyebrow">Supervisor control</p>
         <h2>Report issue</h2>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}

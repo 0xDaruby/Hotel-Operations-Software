@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { readAllRows } from './read-all-rows';
+import * as activityQuery from '../features/activity/activity-query';
 
 type Row = Record<string, unknown>;
 const features = fileURLToPath(new URL('../features/', import.meta.url));
@@ -80,6 +81,7 @@ function loadReader(file: string, failedTable?: string, payments?: Row[]) {
   runInNewContext(source, {
     exports,
     require(name: string) {
+      if (name === './activity-query') return activityQuery;
       if (name === '@/lib/supabase/server') return { createClient: async () => client };
       if (name === '@/features/auth/staff-profile')
         return {

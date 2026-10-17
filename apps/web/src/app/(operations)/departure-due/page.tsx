@@ -10,7 +10,6 @@ export default async function DepartureDuePage() {
     <>
       <div className="inventory-intro">
         <div>
-          <p className="eyebrow">Departure management</p>
           <h2>{stays.length} occupied {stays.length === 1 ? 'room' : 'rooms'}</h2>
         </div>
       </div>

@@ -179,9 +179,8 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
 
           <main key={pathname} className="content page-motion" id="main-content" tabIndex={-1}>
             <header className="page-heading">
-              <p className="eyebrow">{current?.eyebrow}</p>
-              <h1>{current?.label}</h1>
-              <p>{current?.subtitle}</p>
+              <h1 id="workspace-page-heading">{current?.label}</h1>
+              {current?.subtitle ? <p>{current.subtitle}</p> : null}
             </header>
             {children}
             <footer className="footer"><span></span><span>XYZ Hotel / Operations</span></footer>

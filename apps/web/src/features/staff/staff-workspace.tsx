@@ -47,7 +47,7 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
           });
         }}
       >
-        <h3>Add staff account</h3>
+        <h2 className="staff-section-heading">Add staff account</h2>
         <p>
           Staff receive an email to set their own password. Access stays
           inactive until setup is complete.
@@ -95,7 +95,7 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
             <div className="inspection-card-head">
               <div>
                 <p className="stay-room">{member.role}</p>
-                <h3>{member.displayName}</h3>
+                <h2 className="staff-section-heading">{member.displayName}</h2>
               </div>
               <span
                 className={`status-badge ${member.active ? "status-occupied" : "status-muted"}`}

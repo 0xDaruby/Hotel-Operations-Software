@@ -15,7 +15,6 @@ export default async function StaysPage() {
       <div className="stays-main">
         <div className="inventory-intro">
           <div>
-            <p className="eyebrow">Walk-in stays</p>
             <h2>{stays.length} active {stays.length === 1 ? 'stay' : 'stays'}</h2>
           </div>
         </div>

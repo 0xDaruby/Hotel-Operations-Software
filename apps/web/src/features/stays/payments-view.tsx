@@ -27,7 +27,6 @@ export function PaymentsView({ payments, total, date, today }: PaymentsViewProps
     <section aria-labelledby="payments-heading">
       <div className="inventory-intro">
         <div>
-          <p className="eyebrow">Payments received</p>
           <h2 id="payments-heading" className="payments-heading"><Wallet02Icon className="icon icon-lg icon-brand-action" aria-hidden="true" />{formatNaira(total)} recorded on {date}</h2>
         </div>
       </div>

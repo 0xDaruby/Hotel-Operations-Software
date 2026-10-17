@@ -23,9 +23,13 @@ export function formatActivityAction(action: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function getActivityContextLabel(input: { roomNumber?: string | null; guestName?: string | null }): string {
-  const room = input.roomNumber?.trim();
-  const guest = input.guestName?.trim();
+export function getActivityContextLabel(input: { roomNumber?: string | null; guestName?: string | null; details?: ActivityEvent['details'] }): string {
+  const record = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const before = record(input.details?.before);
+  const after = record(input.details?.after);
+  const text = (...values: unknown[]) => values.find((value): value is string => typeof value === 'string' && value.trim() !== '')?.trim();
+  const room = text(after.to_room, after.room, before.room, input.roomNumber);
+  const guest = text(after.guest, before.guest, input.guestName);
   if (room && guest) return `Room ${room} · ${guest}`;
   if (room) return `Room ${room}`;
   if (guest) return guest;
@@ -51,7 +55,7 @@ export function getActivityCategory(action: string): ActivityCategory {
 
 export function groupActivityEventsByDate(events: ActivityEvent[], now = new Date()): ActivityDayGroup[] {
   const todayKey = localDateKey(now);
-  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterday = new Date(now.getTime() - 86400000);
   const yesterdayKey = localDateKey(yesterday);
   const groups = new Map<string, ActivityDayGroup>();
 
@@ -65,7 +69,7 @@ export function groupActivityEventsByDate(events: ActivityEvent[], now = new Dat
         ? 'Today'
         : key === yesterdayKey
           ? 'Yesterday'
-          : new Intl.DateTimeFormat('en-GB', { dateStyle: 'full' }).format(date);
+          : new Intl.DateTimeFormat('en-GB', { dateStyle: 'full', timeZone: 'Africa/Lagos' }).format(date);
       group = { key, label, events: [] };
       groups.set(key, group);
     }
@@ -77,8 +81,5 @@ export function groupActivityEventsByDate(events: ActivityEvent[], now = new Dat
 }
 
 function localDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
