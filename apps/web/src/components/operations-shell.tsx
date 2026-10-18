@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import type { StaffProfile, StaffRole } from '@/features/auth/staff-profile';
@@ -9,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Home04Icon, Menu02Icon, XIcon } from '@/components/icons';
 import { getDockNavigation, getNavigationForRole } from '@/components/navigation-config';
 import { MobileBottomDock } from '@/components/mobile-bottom-dock';
+import { SidebarNavigation } from '@/components/sidebar-navigation';
 
 const navigation = getNavigationForRole;
 
@@ -149,14 +149,9 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
               <button className="menu-close" onClick={() => setMenuOpen(false)} type="button" aria-label="Close"><XIcon className="icon icon-md" aria-hidden="true" /></button>
           </div>
           <p className="nav-heading">Workspace</p>
-          <nav className="main-nav" aria-label="Main navigation">
-            {items.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={pathname === item.href ? 'page' : undefined} onClick={() => setMenuOpen(false)}>
-                {item.icon ? <span className="nav-icon" aria-hidden="true"><item.icon className="icon icon-md" /></span> : null}
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
+          <SidebarNavigation items={items} pathname={pathname} attentionCount={attentionCount}
+            inspectionCount={inspectionCount} maintenanceCount={maintenanceCount} departureCount={departureCount}
+            onNavigate={() => setMenuOpen(false)} />
           <div className="sidebar-note">
           </div>
         </aside>

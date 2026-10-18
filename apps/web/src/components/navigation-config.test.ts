@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getDockAttentionBadgeCount, getDockBadgeRequirements, getDockNavigation } from './navigation-config';
+import { getDockAttentionBadgeCount, getNavigationBadgeRequirements, getDockNavigation } from './navigation-config';
 
 test('Owner mobile dock preserves its original destinations and overflow', () => {
   const { docked, overflow } = getDockNavigation('owner');
@@ -25,10 +25,10 @@ test('non-owner mobile dock destinations remain unchanged', () => {
   ]);
 });
 
-test('badge counts are loaded for every role with the corresponding dock destination', () => {
-  assert.deepEqual(getDockBadgeRequirements('owner'), { overview: true, inspections: true, maintenance: true, departures: false });
-  assert.deepEqual(getDockBadgeRequirements('receptionist'), { overview: false, inspections: false, maintenance: true, departures: true });
-  assert.deepEqual(getDockBadgeRequirements('supervisor'), { overview: false, inspections: true, maintenance: true, departures: false });
+test('badge counts are loaded for every destination each role can access', () => {
+  assert.deepEqual(getNavigationBadgeRequirements('owner'), { overview: true, inspections: true, maintenance: true, departures: true });
+  assert.deepEqual(getNavigationBadgeRequirements('receptionist'), { overview: false, inspections: false, maintenance: true, departures: true });
+  assert.deepEqual(getNavigationBadgeRequirements('supervisor'), { overview: false, inspections: true, maintenance: true, departures: false });
 });
 
 test('departure badge uses live supplied count and hides zero or unavailable counts', () => {

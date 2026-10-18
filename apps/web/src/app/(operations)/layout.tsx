@@ -6,12 +6,12 @@ import { getOwnerAttentionCount } from '@/features/inventory/owner-attention-cou
 import { createClient } from '@/lib/supabase/server';
 import { getOpenInspectionCount } from '@/features/inspections/inspections';
 import { getOpenMaintenanceCount } from '@/features/maintenance/maintenance';
-import { getDockBadgeRequirements } from '@/components/navigation-config';
+import { getNavigationBadgeRequirements } from '@/components/navigation-config';
 import { getDepartureAttentionCount } from '@/features/stays/departure-attention-count';
 
 export default async function OperationsLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const profile = await requireStaffProfile();
-  const badgeRequirements = getDockBadgeRequirements(profile.role);
+  const badgeRequirements = getNavigationBadgeRequirements(profile.role);
   const [attentionCount, inspectionCount, maintenanceCount, departureCount] = await Promise.all([
     badgeRequirements.overview ? createClient().then((supabase) => getOwnerAttentionCount(supabase)) : Promise.resolve(0),
     badgeRequirements.inspections ? getOpenInspectionCount() : Promise.resolve(null),

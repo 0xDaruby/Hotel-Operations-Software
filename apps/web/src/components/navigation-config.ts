@@ -83,15 +83,15 @@ export function getDockNavigation(role: StaffRole): DockedNavigation {
   return { docked, overflow };
 }
 
-export type DockBadgeRequirements = {
+export type NavigationBadgeRequirements = {
   overview: boolean;
   inspections: boolean;
   maintenance: boolean;
   departures: boolean;
 };
 
-export function getDockBadgeRequirements(role: StaffRole): DockBadgeRequirements {
-  const destinations = new Set(getDockNavigation(role).docked.map((item) => item.href));
+export function getNavigationBadgeRequirements(role: StaffRole): NavigationBadgeRequirements {
+  const destinations = new Set(getNavigationForRole(role).map((item) => item.href));
   return {
     overview: destinations.has('/overview'),
     inspections: destinations.has('/inspections'),
