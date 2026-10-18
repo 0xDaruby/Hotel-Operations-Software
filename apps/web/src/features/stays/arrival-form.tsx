@@ -1,5 +1,6 @@
 'use client';
 
+import { useSuccessBanner } from '@/components/success-banner';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import AnimatedDropdown from '@/components/ui/animated-dropdown';
@@ -20,7 +21,7 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
   const [paidDays, setPaidDays] = useState(1);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const showSuccess = useSuccessBanner();
   const [pending, startTransition] = useTransition();
 
   const room = readyRooms.find((item) => item.id === roomId) ?? null;
@@ -37,25 +38,28 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
     event.preventDefault();
     if (!room || !canSubmit) return;
     setError(null);
-    setNotice(null);
     startTransition(async () => {
-      const result = await recordArrivalAction({
-        roomId: room.id,
-        guestName,
-        guestPhone,
-        paidDays: days,
-        expectedAmount: amount,
-      });
-      if (result.ok) {
-        setNotice(`Arrival recorded — ${room.roomNumber} is occupied by ${guestName.trim()}.`);
-        setRoomId('');
-        setGuestName('');
-        setGuestPhone('');
-        setPaidDays(1);
-        setConfirmed(false);
-        router.refresh();
-      } else {
-        setError(result.error ?? 'Could not record the arrival.');
+      try {
+        const result = await recordArrivalAction({
+          roomId: room.id,
+          guestName,
+          guestPhone,
+          paidDays: days,
+          expectedAmount: amount,
+        });
+        if (result.ok) {
+          showSuccess(`Arrival recorded · Room ${room.roomNumber}`, guestName.trim());
+          setRoomId('');
+          setGuestName('');
+          setGuestPhone('');
+          setPaidDays(1);
+          setConfirmed(false);
+          router.refresh();
+        } else {
+          setError(result.error ?? 'Could not record the arrival.');
+        }
+      } catch {
+        setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');
       }
     });
   }
@@ -63,7 +67,6 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
   return (
     <form className="arrival-form" onSubmit={submit}>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
-      {notice ? <p className="form-notice" role="status">{notice}</p> : null}
       <div className="arrival-grid">
         <label className="inventory-field">
           <span>Ready room</span>

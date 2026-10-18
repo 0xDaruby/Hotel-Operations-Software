@@ -1,5 +1,6 @@
 'use client';
 
+import { useSuccessBanner } from '@/components/success-banner';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { TaskDaily02Icon } from '@/components/icons';
 import { Dialog } from '@/components/dialog';
@@ -84,6 +85,7 @@ export function InspectionWorkspace({ requirements, canRecord }: InspectionWorks
 }
 
 function InspectionDialog({ requirement, onClose }: { requirement: InspectionRequirement; onClose: () => void }) {
+  const showSuccess = useSuccessBanner();
   const [outcome, setOutcome] = useState<Outcome>('approved');
   // Start empty: the previous finding is shown on the card, and must not carry into a new outcome.
   const [findings, setFindings] = useState('');
@@ -127,7 +129,11 @@ function InspectionDialog({ requirement, onClose }: { requirement: InspectionReq
           personallyVerified,
           expectedVersion: requirement.version,
         });
-        if (result.ok) onClose();
+        if (result.ok) {
+          const outcomeText = outcome === 'approved' ? 'Passed' : outcome === 'attention' ? 'Attention needed' : 'Access blocked';
+          showSuccess(`Inspection saved · Room ${requirement.roomNumber}`, outcomeText);
+          onClose();
+        }
         else setError(result.error ?? 'The inspection could not be completed.');
       } catch {
         setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');

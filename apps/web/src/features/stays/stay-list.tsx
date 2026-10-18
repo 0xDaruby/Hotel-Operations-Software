@@ -1,5 +1,6 @@
 'use client';
 
+import { useSuccessBanner } from '@/components/success-banner';
 import { useRouter } from 'next/navigation';
 import { UserCheck01Icon } from '@/components/icons';
 import { useState, useTransition } from 'react';
@@ -28,7 +29,8 @@ type StayListProps = {
 
 type DialogState = { type: 'extend' | 'move' | 'correct' | 'void' | 'depart'; stay: Stay } | null;
 
-function useAction(onDone: () => void) {
+function useAction(onDone: () => void, successMessage: string, successDetail?: string) {
+  const showSuccess = useSuccessBanner();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,7 @@ function useAction(onDone: () => void) {
       try {
         const result = await fn();
         if (result.ok) {
+          showSuccess(successMessage, successDetail);
           router.refresh();
           onDone();
         } else {
@@ -131,7 +134,7 @@ function ExtendDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const [addedDays, setAddedDays] = useState(1);
   const days = Number.isFinite(addedDays) ? Math.max(1, Math.min(30, Math.trunc(addedDays))) : 1;
   const amount = stay.originalDailyRate * days;
-  const { pending, error, run } = useAction(onClose);
+  const { pending, error, run } = useAction(onClose, `Stay extended · Room ${stay.roomNumber}`, stay.guestName);
 
   return (
     <TaskSheet title={`Extend stay — ${stay.roomNumber}`} onClose={onClose} pending={pending} dirty={addedDays !== 1}
@@ -154,8 +157,8 @@ function MoveDialog({ stay, readyRooms, onClose }: { stay: Stay; readyRooms: Rea
   const candidates = readyRooms.filter((room) => room.id !== stay.roomId);
   const [toRoomId, setToRoomId] = useState('');
   const [reason, setReason] = useState('');
-  const { pending, error, run } = useAction(onClose);
   const target = candidates.find((room) => room.id === toRoomId) ?? null;
+  const { pending, error, run } = useAction(onClose, `Room moved · ${stay.roomNumber} → ${target?.roomNumber ?? ''}`, stay.guestName);
 
   return (
     <TaskSheet title={`Move stay — ${stay.roomNumber}`} onClose={onClose} pending={pending} dirty={toRoomId !== '' || reason !== ''}
@@ -183,7 +186,7 @@ function CorrectDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const [guestPhone, setGuestPhone] = useState(stay.guestPhone ?? '');
   const [paidDays, setPaidDays] = useState(String(stay.paidDays));
   const [reason, setReason] = useState('');
-  const { pending, error, run } = useAction(onClose);
+  const { pending, error, run } = useAction(onClose, `Stay corrected · Room ${stay.roomNumber}`, guestName.trim());
   const days = Number(paidDays);
   const validDays = paidDays.trim() !== '' && Number.isInteger(days) && days >= 1 && days <= 30;
   const detailsChanged = guestName.trim() !== stay.guestName.trim() || guestPhone.trim() !== (stay.guestPhone ?? '').trim();
@@ -225,7 +228,7 @@ function CorrectDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
 
 function VoidDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const [reason, setReason] = useState('');
-  const { pending, error, run } = useAction(onClose);
+  const { pending, error, run } = useAction(onClose, `Stay voided · Room ${stay.roomNumber}`, stay.guestName);
 
   return (
     <Dialog open title={`Void stay — ${stay.roomNumber}`} onClose={onClose}>
@@ -245,7 +248,7 @@ function VoidDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
 }
 
 export function DepartDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
-  const { pending, error, run } = useAction(onClose);
+  const { pending, error, run } = useAction(onClose, `Departure confirmed · Room ${stay.roomNumber}`, stay.guestName);
 
   return (
     <Dialog open title={`Confirm departure — ${stay.roomNumber}`} onClose={onClose}>

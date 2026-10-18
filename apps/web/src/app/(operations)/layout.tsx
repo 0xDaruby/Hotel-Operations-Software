@@ -1,4 +1,5 @@
 import { OperationsShell } from '@/components/operations-shell';
+import { SuccessBannerProvider } from '@/components/success-banner';
 import { OperationsRefresh } from '@/components/operations-refresh';
 import { requireStaffProfile } from '@/features/auth/staff-profile';
 import { getOwnerAttentionCount } from '@/features/inventory/owner-attention-count';
@@ -18,7 +19,7 @@ export default async function OperationsLayout({ children }: Readonly<{ children
     badgeRequirements.departures ? createClient().then((supabase) => getDepartureAttentionCount(supabase)) : Promise.resolve(null),
   ]);
   return (
-    <OperationsShell
+    <SuccessBannerProvider><OperationsShell
       profile={profile}
       attentionCount={attentionCount}
       inspectionCount={inspectionCount}
@@ -27,6 +28,6 @@ export default async function OperationsLayout({ children }: Readonly<{ children
     >
       <OperationsRefresh />
       {children}
-    </OperationsShell>
+    </OperationsShell></SuccessBannerProvider>
   );
 }

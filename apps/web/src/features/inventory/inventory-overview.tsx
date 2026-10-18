@@ -1,5 +1,6 @@
 'use client';
 
+import { useSuccessBanner } from '@/components/success-banner';
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { TaskSheet } from '@/components/task-sheet';
@@ -267,6 +268,7 @@ function getRoomState(
 }
 
 function ResolveIssueDialog({ issue, onClose }: { issue: OwnerAttentionItem; onClose: () => void }) {
+  const showSuccess = useSuccessBanner();
   const [resolutionDetail, setResolutionDetail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [resolved, setResolved] = useState<{ resolvedBy: string; resolvedAt: string } | null>(null);
@@ -284,7 +286,7 @@ function ResolveIssueDialog({ issue, onClose }: { issue: OwnerAttentionItem; onC
           resolutionDetail,
           expectedVersion: issue.version ?? 1,
         });
-        if (result.ok) onClose();
+        if (result.ok) { showSuccess(`Maintenance resolved · Room ${issue.roomNumber}`); onClose(); }
         else if (result.alreadyResolved) setResolved(result.alreadyResolved);
         else setError(result.error ?? 'The maintenance issue could not be resolved.');
       } catch {

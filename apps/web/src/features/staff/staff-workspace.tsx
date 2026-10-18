@@ -1,4 +1,5 @@
 "use client";
+import { useSuccessBanner } from '@/components/success-banner';
 import { useState, useTransition } from "react";
 import { Dialog } from '@/components/dialog';
 import type { StaffMember } from "./staff-management";
@@ -10,9 +11,16 @@ import {
 } from "./actions";
 import type { StaffActionResult } from "./provisioning";
 export function StaffWorkspace({ staff, managementAvailable = true }: { staff: StaffMember[]; managementAvailable?: boolean }) {
+  const showSuccess = useSuccessBanner();
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<StaffActionResult | null>(null);
   const [selected, setSelected] = useState<StaffMember | null>(null);
+  function presentResult(result: StaffActionResult, name?: string, summary?: string) {
+    if (result.ok && result.emailSent !== false && !result.error) {
+      showSuccess(summary ?? result.message ?? 'Staff account updated.', name);
+      setNotice(null);
+    } else setNotice(result);
+  }
   const runAction = async (operation: () => Promise<StaffActionResult>) => {
     try {
       return await operation();
@@ -42,7 +50,7 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                 role: data.get("role"),
               }),
             );
-            setNotice(result);
+            presentResult(result, String(data.get("displayName") ?? ""), "Staff account created");
             if (result.ok) form.reset();
           });
         }}
@@ -129,10 +137,12 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                     className="button button-secondary"
                     onClick={() =>
                       startTransition(async () =>
-                        setNotice(
+                        presentResult(
                           await runAction(() =>
                             retryStaffSetupAction(member.userId),
                           ),
+                          member.displayName,
+                          "Setup email requested",
                         ),
                       )
                     }
@@ -188,7 +198,7 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                         reason: String(data.get("reason") ?? ""),
                       }),
                 );
-                setNotice(result);
+                presentResult(result, selected.displayName, selected.setupPending ? "Staff setup cancelled" : selected.active ? "Staff access deactivated" : "Staff access activated");
                 if (result.ok) setSelected(null);
               });
             }}

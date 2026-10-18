@@ -1,5 +1,6 @@
 'use client';
 
+import { useSuccessBanner } from '@/components/success-banner';
 import { useState, useTransition } from 'react';
 import { RepairIcon } from '@/components/icons';
 import { TaskSheet } from '@/components/task-sheet';
@@ -86,7 +87,7 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
   const [issueType, setIssueType] = useState<MaintenanceIssueType>('air_conditioning');
   const [detail, setDetail] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const showSuccess = useSuccessBanner();
   const [pending, startTransition] = useTransition();
   const canSubmit = roomId !== '' && (issueType !== 'other' || detail.trim() !== '') && !pending;
 
@@ -94,16 +95,20 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
     event.preventDefault();
     if (!canSubmit) return;
     setError(null);
-    setNotice(null);
     startTransition(async () => {
-      const result = await reportMaintenanceIssueAction({ roomId, issueType, detail });
-      if (result.ok) {
-        setNotice('Issue reported. The room is now blocked from new assignment.');
-        setRoomId('');
-        setIssueType('air_conditioning');
-        setDetail('');
-      } else {
-        setError(result.error ?? 'The maintenance issue could not be reported.');
+      try {
+        const result = await reportMaintenanceIssueAction({ roomId, issueType, detail });
+        if (result.ok) {
+          const room = rooms.find(item => item.id === roomId);
+          showSuccess(`Issue reported${room ? ` · Room ${room.roomNumber}` : ''}`, 'New arrivals blocked');
+          setRoomId('');
+          setIssueType('air_conditioning');
+          setDetail('');
+        } else {
+          setError(result.error ?? 'The maintenance issue could not be reported.');
+        }
+      } catch {
+        setError('We could not confirm the save. Your entries are still here. Check your connection and try again.');
       }
     });
   }
@@ -114,7 +119,6 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
         <h2>Report issue</h2>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
-      {notice ? <p className="form-notice" role="status">{notice}</p> : null}
       <label className="inventory-field">
         <span>Room</span>
         <select value={roomId} onChange={(event) => setRoomId(event.target.value)} required>
@@ -139,6 +143,7 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
 }
 
 function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClose: () => void }) {
+  const showSuccess = useSuccessBanner();
   const [resolutionDetail, setResolutionDetail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [alreadyResolved, setAlreadyResolved] = useState<{ resolvedBy: string; resolvedAt: string } | null>(null);
@@ -157,7 +162,7 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
           resolutionDetail,
           expectedVersion: issue.version,
         });
-        if (result.ok) onClose();
+        if (result.ok) { showSuccess(`Maintenance resolved · Room ${issue.roomNumber}`); onClose(); }
         else if (result.alreadyResolved) setAlreadyResolved(result.alreadyResolved);
         else setError(result.error ?? 'The maintenance issue could not be resolved.');
       } catch {
