@@ -15,6 +15,8 @@
     "test": "pnpm -r --if-present test",
     "test:database": "node tests/database/replay.mjs",
     "test:recovery": "node --test tests/database-plan.test.mjs",
+    "test:ui": "node tests/browser/ui-validation.cjs",
+    "test:ui:preview": "node tests/browser/ui-validation-server.cjs",
     "db:plan": "node scripts/database-plan.mjs",
     "db:verify-plan": "node scripts/database-plan.mjs --check",
     "db:generate": "prisma generate",

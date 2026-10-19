@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { RepairIcon, UserCheck01Icon } from '@/components/icons';
-import AnimatedDropdown from '@/components/ui/animated-dropdown';
 import type { HotelRoom, RoomCategory } from './inventory';
 
 type RoomBoardProps = {
@@ -67,19 +66,20 @@ export function RoomBoard({
     <section aria-labelledby="room-board-heading">
       <div className="inventory-intro">
         <div>
-          <h2 id="room-board-heading">{visibleRooms.length} of {rooms.length} rooms</h2>
+          <h2 id="room-board-heading"><span role="status">{visibleRooms.length} of {rooms.length} rooms</span></h2>
         </div>
       </div>
 
       <div className="room-toolbar">
         <label className="inventory-field">
           <span>Category</span>
-          <AnimatedDropdown
-            items={categoryOptions}
-            selectedValue={categoryId}
-            onSelect={(item) => setCategoryId(item.value ?? 'all')}
-            aria-label="Filter by category"
-          />
+          <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} aria-label="Filter by category">
+            {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}
+          </select>
+        </label>
+        <label className="inventory-field inventory-search">
+          <span>Find a room</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. 301" type="search" />
         </label>
         <div className="inventory-field inventory-state-field">
           <span>State</span>
@@ -101,15 +101,11 @@ export function RoomBoard({
             ))}
           </div>
         </div>
-        <label className="inventory-field inventory-search">
-          <span>Find a room</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. 301" type="search" />
-        </label>
         {filtersActive ? <button className="text-button" onClick={clearFilters} type="button">Clear filters</button> : null}
       </div>
 
       {visibleRooms.length ? (
-        <div className="room-grid" aria-live="polite">
+        <div className="room-grid">
           {visibleRooms.map((room) => {
             const isOccupied = occupied.has(room.id);
             const isInspectionDue = inspectionDue.has(room.id);

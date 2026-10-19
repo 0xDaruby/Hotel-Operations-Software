@@ -3,7 +3,6 @@
 import { useSuccessBanner } from '@/components/success-banner';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import AnimatedDropdown from '@/components/ui/animated-dropdown';
 import { recordArrivalAction } from './actions';
 import { deadlineFromNow, formatDateLabel, formatNaira } from './format';
 
@@ -65,19 +64,16 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
   }
 
   return (
-    <form className="arrival-form" onSubmit={submit}>
+    <form id="arrival-form" className="arrival-form" onSubmit={submit} aria-busy={pending} tabIndex={-1}>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
+      <fieldset className="arrival-inputs" disabled={pending}>
       <div className="arrival-grid">
         <label className="inventory-field">
           <span>Ready room</span>
-          <AnimatedDropdown
-            items={roomOptions}
-            text={readyRooms.length ? 'Choose a ready room' : 'No ready rooms available'}
-            selectedValue={roomId}
-            onSelect={(item) => setRoomId(item.value ?? '')}
-            aria-label="Ready room"
-            disabled={!readyRooms.length}
-          />
+          <select value={roomId} onChange={(event) => setRoomId(event.target.value)} disabled={!readyRooms.length || pending} required>
+            <option value="">{readyRooms.length ? 'Choose a ready room' : 'No ready rooms available'}</option>
+            {roomOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}
+          </select>
         </label>
         <label className="inventory-field">
           <span>Guest name</span>
@@ -85,7 +81,7 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
         </label>
         <label className="inventory-field">
           <span>Guest phone (optional)</span>
-          <input value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} placeholder="e.g. 0803 000 0000" />
+          <input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} placeholder="e.g. 0803 000 0000" />
         </label>
         <label className="inventory-field">
           <span>Paid days (24 hours each)</span>
@@ -110,6 +106,7 @@ export function ArrivalForm({ readyRooms }: ArrivalFormProps) {
           {pending ? 'Recording…' : 'Record arrival'}
         </button>
       </div>
+      </fieldset>
     </form>
   );
 }

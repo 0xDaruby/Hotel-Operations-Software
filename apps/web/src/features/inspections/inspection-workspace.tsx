@@ -1,7 +1,7 @@
 'use client';
 
 import { useSuccessBanner } from '@/components/success-banner';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useRef, useState, useTransition } from 'react';
 import { TaskDaily02Icon } from '@/components/icons';
 import { Dialog } from '@/components/dialog';
 import { DiscardConfirmation } from '@/components/discard-confirmation';
@@ -85,6 +85,7 @@ export function InspectionWorkspace({ requirements, canRecord }: InspectionWorks
 }
 
 function InspectionDialog({ requirement, onClose }: { requirement: InspectionRequirement; onClose: () => void }) {
+  const findingsId = useId();
   const showSuccess = useSuccessBanner();
   const [outcome, setOutcome] = useState<Outcome>('approved');
   // Start empty: the previous finding is shown on the card, and must not carry into a new outcome.
@@ -158,11 +159,11 @@ function InspectionDialog({ requirement, onClose }: { requirement: InspectionReq
           </select>
         </label>
         {!findingsVisible ? <button className="inspection-add-note" type="button" onClick={() => setShowFindings(true)}>+ Add findings <span>Optional</span></button> : null}
-        {findingsVisible ? <label className="inventory-field">
-          <span>{needsFindings ? 'Reason' : 'Findings (optional)'}</span>
-          <textarea ref={findingsRef} value={findings} onChange={(event) => setFindings(event.target.value)} rows={3} maxLength={250} required={needsFindings} placeholder={needsFindings ? 'What needs attention, or why was access blocked?' : 'Add anything the team should know…'} />
-          <span className="inspection-note-count">{findings.length}/250</span>
-        </label> : null}
+        {findingsVisible ? <div className="inventory-field">
+          <label htmlFor={findingsId}>{needsFindings ? 'Reason' : 'Findings (optional)'}</label>
+          <textarea id={findingsId} aria-describedby={`${findingsId}-count`} ref={findingsRef} value={findings} onChange={(event) => setFindings(event.target.value)} rows={3} maxLength={250} required={needsFindings} placeholder={needsFindings ? 'What needs attention, or why was access blocked?' : 'Add anything the team should know…'} />
+          <span id={`${findingsId}-count`} className="inspection-note-count">{findings.length}/250</span>
+        </div> : null}
         <label className="arrival-confirm">
           <input type="checkbox" checked={personallyVerified} onChange={(event) => setPersonallyVerified(event.target.checked)} />
           <span>Personally verified: this outcome reflects my direct inspection of room {requirement.roomNumber}.</span>

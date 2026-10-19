@@ -17,6 +17,7 @@ export default async function StaysPage() {
           <div>
             <h2>{stays.length} active {stays.length === 1 ? 'stay' : 'stays'}</h2>
           </div>
+          {canRecord ? <a className="button button-primary arrival-jump" href="#arrival-form">Record arrival</a> : null}
         </div>
         <StayList stays={stays} payments={payments} totals={totals} readyRooms={context.readyRooms} canRecord={canRecord} />
       </div>

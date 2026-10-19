@@ -1,7 +1,4 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import Link from 'next/link';
 import { Wallet02Icon } from '@/components/icons';
 import { formatNaira } from './format';
 import type { PaymentRecord } from './stays';
@@ -14,34 +11,29 @@ type PaymentsViewProps = {
 };
 
 export function PaymentsView({ payments, total, date, today }: PaymentsViewProps) {
-  const router = useRouter();
-  const [selected, setSelected] = useState(date);
-
-  function go(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) return;
-    router.push(`/payments?date=${selected}`);
-  }
+  const dateLabel = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' });
 
   return (
     <section aria-labelledby="payments-heading">
       <div className="inventory-intro">
         <div>
-          <h2 id="payments-heading" className="payments-heading"><Wallet02Icon className="icon icon-lg icon-brand-action" aria-hidden="true" />{formatNaira(total)} recorded on {date}</h2>
+          <h2 id="payments-heading" className="payments-heading"><Wallet02Icon className="icon icon-lg icon-brand-action" aria-hidden="true" />{formatNaira(total)} recorded on {dateLabel}</h2>
         </div>
       </div>
-      <form className="payments-date" onSubmit={go}>
+      <form className="payments-date" action="/payments" method="get">
         <label className="inventory-field">
           <span>Day</span>
-          <input type="date" value={selected} max={today} onChange={(event) => setSelected(event.target.value)} />
+          <input key={date} name="date" type="date" defaultValue={date} max={today} required />
         </label>
         <button className="button button-secondary" type="submit">View day</button>
         {date !== today ? (
-          <button className="text-button" type="button" onClick={() => router.push('/payments')}>Back to today</button>
+          <Link className="text-button" href="/payments">Back to today</Link>
         ) : null}
       </form>
       {payments.length ? (
+        <div className="payments-table-scroll" role="region" aria-label="Payments recorded" tabIndex={0}>
         <table className="payments-table">
+          <caption className="sr-only">Payments recorded on {dateLabel}</caption>
           <thead>
             <tr>
               <th scope="col">Room</th>
@@ -71,9 +63,10 @@ export function PaymentsView({ payments, total, date, today }: PaymentsViewProps
             </tr>
           </tfoot>
         </table>
+        </div>
       ) : (
         <div className="inventory-empty" role="status">
-          <h2>No payments recorded on {date}</h2>
+          <h2>No payments recorded on {dateLabel}</h2>
           <p>Arrival and extension payments for this day will appear here once recorded.</p>
         </div>
       )}

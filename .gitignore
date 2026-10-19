@@ -5,6 +5,7 @@ dist/
 build/
 out/
 coverage/
+tests/browser/artifacts/
 generated/prisma/
 .netlify/
 *.tsbuildinfo

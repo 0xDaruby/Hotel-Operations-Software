@@ -1,0 +1,107 @@
+{
+  "reviewDate": "2026-10-19",
+  "environment": "Isolated loopback transport and disposable in-memory PostgreSQL engine; production components, action adapters and SQL functions",
+  "playwrightVersion": "1.62.1",
+  "browser": "Installed Microsoft Edge, headless",
+  "results": [
+    {
+      "name": "inspection validation, keyboard containment and dirty-dismiss recovery",
+      "status": "passed"
+    },
+    {
+      "name": "offline save preserves draft, creates no false success and refreshes on reconnect",
+      "status": "passed"
+    },
+    {
+      "name": "pending inspection blocks duplicate submit and dismissal; approval preserves maintenance blocks",
+      "status": "passed"
+    },
+    {
+      "name": "two supervisor sessions reject stale inspection, preserve draft and reopen current version",
+      "status": "passed"
+    },
+    {
+      "name": "maintenance resolution is independent and a second session sees recorded resolution without duplicate audit",
+      "status": "passed"
+    },
+    {
+      "name": "maintenance required detail, offline recovery and protected pending form",
+      "status": "passed"
+    },
+    {
+      "name": "arrival pending state freezes submitted input and records one payment",
+      "status": "passed"
+    },
+    {
+      "name": "lost response after database commit preserves draft; retry cannot duplicate stay/payment",
+      "status": "passed"
+    },
+    {
+      "name": "all mixed attention items and expanded room facts remain visible on mobile",
+      "status": "passed"
+    },
+    {
+      "name": "200% CSS content scaling: populated pages reflow and resolution action remains reachable",
+      "status": "passed"
+    },
+    {
+      "name": "rendered solid-colour text and input-boundary contrast",
+      "status": "passed"
+    }
+  ],
+  "errors": [],
+  "external": [],
+  "limits": [
+    "Disposable PostgreSQL engine; Supabase and Next transport boundaries replaced by loopback adapters.",
+    "CSS content scaling is not browser-chrome zoom or physical-phone/software-keyboard testing.",
+    "Contrast checks cover rendered solid text and input borders, not all graphics or assistive technology."
+  ],
+  "contrast": {
+    "states": [
+      {
+        "state": "inspection offline error dialog",
+        "textSamples": 13,
+        "controlSamples": 2
+      },
+      {
+        "state": "maintenance already-resolved dialog",
+        "textSamples": 7,
+        "controlSamples": 1
+      },
+      {
+        "state": "/overview",
+        "textSamples": 232,
+        "controlSamples": 0
+      },
+      {
+        "state": "/rooms",
+        "textSamples": 151,
+        "controlSamples": 2
+      },
+      {
+        "state": "/inspections",
+        "textSamples": 102,
+        "controlSamples": 0
+      },
+      {
+        "state": "/maintenance",
+        "textSamples": 95,
+        "controlSamples": 3
+      },
+      {
+        "state": "/payments",
+        "textSamples": 46,
+        "controlSamples": 1
+      },
+      {
+        "state": "/stays",
+        "textSamples": 29,
+        "controlSamples": 4
+      }
+    ],
+    "textSamples": 675,
+    "controlSamples": 13,
+    "textFailures": [],
+    "controlFailures": []
+  }
+}

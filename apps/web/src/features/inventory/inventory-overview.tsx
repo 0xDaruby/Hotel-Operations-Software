@@ -71,7 +71,7 @@ export function InventoryOverview({
           <span className="owner-metric-label">Occupancy</span>
           <strong>{summary.occupiedRooms}<small> / {summary.activeRooms}</small></strong>
           <span className="owner-metric-detail">{occupancyPercent}% of rooms in use</span>
-          <progress max="100" value={occupancyPercent} aria-label={`${occupancyPercent}% occupancy`} />
+          <meter min="0" max="100" value={occupancyPercent} aria-label="Room occupancy">{occupancyPercent}%</meter>
         </div>
         <div className="owner-metric">
           <span className="owner-metric-label">Payments recorded today</span>
@@ -97,9 +97,6 @@ export function InventoryOverview({
             <p className="eyebrow">Needs attention</p>
             <h2 id="owner-attention-heading">{attentionItems.length ? `${attentionItems.length} items, oldest first` : inspectionDueRoomIds.length ? 'Inspections pending' : 'All clear'}</h2>
           </div>
-          {attentionItems.length > 3 ? (
-            <Link className="owner-view-all" href={attentionItems[0].href}>View all {attentionItems.length}</Link>
-          ) : null}
         </div>
         {attentionItems.length ? (
           <ol className="owner-attention-list">

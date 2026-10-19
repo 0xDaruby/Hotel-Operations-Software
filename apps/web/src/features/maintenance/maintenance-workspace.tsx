@@ -114,11 +114,12 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
   }
 
   return (
-    <form className="arrival-form" onSubmit={submit}>
+    <form className="arrival-form" onSubmit={submit} aria-busy={pending}>
       <div>
         <h2>Report issue</h2>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
+      <fieldset className="arrival-inputs" disabled={pending}>
       <label className="inventory-field">
         <span>Room</span>
         <select value={roomId} onChange={(event) => setRoomId(event.target.value)} required>
@@ -138,6 +139,7 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
       </label>
       <p className="arrival-hint">Reporting maintenance blocks new assignment only. It does not end an occupied stay or replace an inspection.</p>
       <button className="button button-primary" type="submit" disabled={!canSubmit}>{pending ? 'Reporting…' : 'Report issue'}</button>
+      </fieldset>
     </form>
   );
 }
