@@ -36,6 +36,7 @@ generated/prisma/
 
 # Prototype screenshots and other local image exports
 *.png
+!docs/images/room-board.png
 
 # Local project memory and personal working files
 /MEMORY.md

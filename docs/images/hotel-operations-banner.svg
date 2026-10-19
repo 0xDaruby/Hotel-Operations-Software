@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="360" viewBox="0 0 1440 360" role="img" aria-labelledby="title desc">
+  <title id="title">Hotel Operations</title>
+  <desc id="desc">Know your rooms. Run your day. A warm paper and sage banner with an illustrated room key.</desc>
+  <rect width="1440" height="360" rx="16" fill="#F5F0E7"/>
+  <path d="M48 42H1392" stroke="#D9CBB9"/>
+  <text x="64" y="88" font-family="Arial, sans-serif" font-size="15" letter-spacing="3" fill="#695640">HOTEL OPERATIONS</text>
+  <text x="60" y="169" font-family="Georgia, serif" font-size="64" fill="#3D392F">Know your rooms.</text>
+  <text x="60" y="242" font-family="Georgia, serif" font-size="64" fill="#3D392F">Run your day.</text>
+  <text x="64" y="300" font-family="Arial, sans-serif" font-size="20" fill="#695640">Front desk · Room readiness · Owner oversight</text>
+  <rect x="1060" y="0" width="380" height="360" fill="#DCE0D0"/>
+  <circle cx="1250" cy="144" r="91" fill="none" stroke="#B0B79F"/>
+  <g transform="translate(1187 60) rotate(10 64 118)">
+    <circle cx="64" cy="25" r="22" fill="none" stroke="#846044" stroke-width="6"/>
+    <rect x="0" y="49" width="128" height="190" rx="46" fill="#F5F0E7" stroke="#846044" stroke-width="2"/>
+    <circle cx="64" cy="73" r="6" fill="#846044"/>
+    <text x="64" y="143" text-anchor="middle" font-family="Georgia, serif" font-size="48" fill="#3D392F">101</text>
+    <path d="M33 164H95" stroke="#D9CBB9"/>
+    <text x="64" y="196" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" letter-spacing="2" fill="#526047">READY</text>
+  </g>
+  <text x="1250" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" letter-spacing="2" fill="#526047">ONE SHARED WORKING DAY</text>
+</svg>
