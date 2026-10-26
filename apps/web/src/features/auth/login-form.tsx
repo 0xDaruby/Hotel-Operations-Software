@@ -110,7 +110,6 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
         <label><input type="checkbox" name="rememberMe" checked={rememberMe}
           onChange={event => setRememberMe(event.target.checked)} disabled={isSubmitting}
           aria-describedby="remember-me-help" /><span>Remember me</span></label>
-        <p id="remember-me-help">For 30 days between uses. Leave off on shared hotel devices.</p>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       <button className="button button-primary" disabled={isSubmitting} type="submit">

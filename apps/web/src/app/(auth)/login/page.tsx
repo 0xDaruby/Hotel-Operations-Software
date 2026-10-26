@@ -27,7 +27,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <h2>Welcome back</h2>
           <p className="login-help">Use the individual account provided by your Owner / Manager.</p>
           <LoginForm nextPath={safeNextPath(params.next)} reason={params.reason} />
-          <p className="login-footnote">No shared logins. Access follows your assigned hotel role.</p>
         </div>
       </section>
     </main>
