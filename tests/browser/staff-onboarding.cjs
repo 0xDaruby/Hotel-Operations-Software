@@ -61,11 +61,30 @@ async function run() {
       const session = calls.at(-1); assert.equal(session.path, '/test-session'); assert.equal(session.hashCleared, true);
     }
     await page.getByLabel('New password', { exact: true }).fill('a-long-password');
+    await page.getByRole('button', { name: 'Show new password', exact: true }).click();
+    assert.equal(await page.getByLabel('New password', { exact: true }).getAttribute('type'), 'text');
+    assert.equal(await page.getByRole('button', { name: 'Hide new password', exact: true }).getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.getByLabel('Confirm password', { exact: true }).getAttribute('type'), 'password');
+    await page.getByRole('button', { name: 'Hide new password', exact: true }).click();
+    assert.equal(await page.getByLabel('New password', { exact: true }).getAttribute('type'), 'password');
+    assert.match(await page.getByRole('listitem').filter({ hasText: '12–72 characters' }).textContent(), /12–72 characters\s*— met$/);
     await page.getByLabel('Confirm password', { exact: true }).fill('different-password');
+    assert.match(await page.getByRole('listitem').filter({ hasText: 'Passwords match' }).textContent(), /Passwords match\s*— not yet met$/);
+    await page.getByRole('button', { name: 'Show confirm password', exact: true }).click();
+    assert.equal(await page.getByLabel('Confirm password', { exact: true }).getAttribute('type'), 'text');
     await page.getByRole('button', { name: 'Set password and continue' }).click();
     await page.getByRole('alert').filter({ hasText: 'The passwords do not match.' }).waitFor();
     assert.equal(new URL(page.url()).pathname, '/set-password');
+    assert.equal(await page.getByLabel('Confirm password', { exact: true }).getAttribute('type'), 'password');
     await page.getByLabel('Confirm password', { exact: true }).fill('a-long-password');
+    assert.equal(await page.getByRole('alert').count(), 0);
+    assert.match(await page.getByRole('listitem').filter({ hasText: 'Passwords match' }).textContent(), /Passwords match\s*— met$/);
+    for (const width of [320, 390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      if (width === 390) await page.screenshot({ path: join(__dirname, 'artifacts/staff-password-setup-mobile.png'), fullPage: true });
+    }
+    await page.screenshot({ path: join(__dirname, 'artifacts/staff-password-setup.png'), fullPage: true });
     await page.getByRole('button', { name: 'Set password and continue' }).click();
     await page.waitForURL(`${origin}/`);
     failSession = true;

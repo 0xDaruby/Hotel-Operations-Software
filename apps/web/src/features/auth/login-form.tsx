@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { hasStaffSetupResponse } from './setup-link';
+import { setRememberBrowserSession } from '@/lib/supabase/browser-persistence';
 
 const reasonMessages: Record<string, string> = {
   inactive: 'This staff account is inactive. Ask the Owner / Manager for access.',
@@ -26,6 +27,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
   const [error, setError] = useState(reason ? reasonMessages[reason] : '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     // The root setup-link bridge consumes this link. Do not clear its session
@@ -39,6 +41,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     setError('');
     setIsSubmitting(true);
     setIsPasswordVisible(false);
@@ -46,19 +49,20 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get('email') ?? '').trim();
     const password = String(formData.get('password') ?? '');
-    const { error: signInError } = await createClient().auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      setError('We could not sign you in. Check your email and password. New staff must open their setup email and choose a password first.');
+    try {
+      setRememberBrowserSession(rememberMe);
+      const { error: signInError } = await createClient().auth.signInWithPassword({ email, password });
+      if (signInError) {
+        setError('We could not sign you in. Check your email and password. New staff must open their setup email and choose a password first.');
+        setIsSubmitting(false);
+        return;
+      }
+      router.replace(nextPath);
+      router.refresh();
+    } catch {
+      setError('We could not complete sign-in. Check your connection and that cookies are allowed, then try again.');
       setIsSubmitting(false);
-      return;
     }
-
-    router.replace(nextPath);
-    router.refresh();
   }
 
   return (
@@ -67,6 +71,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
         <span>Email address</span>
         <input
           autoComplete="username"
+          disabled={isSubmitting}
           inputMode="email"
           name="email"
           placeholder="name@hotel.com"
@@ -79,6 +84,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
         <div className="password-input-control">
           <input
             autoComplete="current-password"
+            disabled={isSubmitting}
             id="password"
             minLength={8}
             name="password"
@@ -99,6 +105,12 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
               : <Eye aria-hidden="true" size={18} strokeWidth={1.8} />}
           </button>
         </div>
+      </div>
+      <div className="login-remember">
+        <label><input type="checkbox" name="rememberMe" checked={rememberMe}
+          onChange={event => setRememberMe(event.target.checked)} disabled={isSubmitting}
+          aria-describedby="remember-me-help" /><span>Remember me</span></label>
+        <p id="remember-me-help">For 30 days between uses. Leave off on shared hotel devices.</p>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       <button className="button button-primary" disabled={isSubmitting} type="submit">

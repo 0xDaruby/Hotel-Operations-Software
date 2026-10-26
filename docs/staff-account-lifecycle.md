@@ -33,6 +33,12 @@ Repository templates are deployment sources; committing them alone does not upda
 
 ## Failure and session behavior
 
+### Login persistence
+
+Login includes **Remember me**, unchecked by default for shared hotel devices. When selected, Supabase Auth cookies and the non-sensitive preference cookie expire 30 days after their latest Auth write/refresh. Without it (or without a stored preference), Auth writes use browser-session cookies. No email or password is saved by this feature. Browser session-restore settings can preserve session cookies; closing a window is not a guaranteed sign-out. Use **Sign out** when leaving a shared device.
+
+Browser, server-action and proxy refresh paths share the same cookie lifetime rules and preserve explicit cookie deletion. Refresh responses retain the SDK's private/no-store headers, including redirects. Remember me does not bypass the staff profile/session revocation checks described below.
+
 Auth deletion and database confirmation are separate services. If either fails or the response is lost, the account stays inactive with **Deletion pending** and **Retry delete account**. Retry reuses the original request and verifies whether Auth removal already happened. It does not undo a partially completed deletion or report unconfirmed success.
 
 An active workspace checks access on the existing 20-second refresh schedule and on focus/reconnection. A denied session clears local Auth state and returns to login. Network failures retry without treating the outage as revocation. Offline devices cannot be remotely cleared while disconnected; database access is denied independently of browser cleanup.

@@ -141,6 +141,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .login-card h2 { font-size: 38px; line-height: 1.1; }
 .login-help { margin: 12px 0 30px; color: var(--muted); }
 .login-form { display: grid; gap: 18px; }
+.login-remember { display: grid; gap: 2px; }
+.login-remember label { display: flex; align-items: center; gap: 10px; min-height: 44px; width: fit-content; cursor: pointer; font-size: 14px; }
+.login-remember input { width: 18px; height: 18px; margin: 0; accent-color: var(--brand-action); }
+.login-remember p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .field { display: grid; gap: 7px; }
 .field > span, .field > label { font-size: 12px; font-weight: 600; }
 .field input { width: 100%; min-height: 48px; padding: 11px 13px; color: var(--ink); background: #fffcf7; border: 1px solid var(--control-border); border-radius: 7px; }
@@ -149,6 +153,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .password-input-control input { padding-right: 52px; }
 .password-visibility-toggle { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--muted); background: transparent; border: 0; border-radius: 5px; }
 .password-visibility-toggle:hover { color: var(--ink); background: var(--surface-subtle); }
+.password-setup-form .password-visibility-toggle { top: 2px; right: 2px; width: 44px; height: 44px; }
+.password-setup-entry { display: grid; gap: 8px; min-width: 0; }
+.password-length-bars { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.password-length-bars span { height: 4px; background: var(--line); border-radius: 2px; }
+.password-length-bars span[data-filled="true"] { background: var(--status-pending-fg); }
+.password-length-bars[data-ready="true"] span[data-filled="true"] { background: var(--status-ready-fg); }
+.password-length-caption { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin: 0; color: var(--muted); font-size: 12px; }
+.password-setup-guidance { display: grid; gap: 12px; }
+.password-setup-checks { display: grid; gap: 7px; margin: 0; padding: 0; color: var(--muted); list-style: none; font-size: 12px; }
+.password-setup-checks li { display: flex; align-items: center; gap: 8px; }
+.password-setup-checks svg { flex-shrink: 0; }
+.password-setup-checks li[data-met="true"] { color: var(--status-ready-fg); }
+.password-setup-guidance p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 11px 16px; border: 1px solid var(--deep-brown); border-radius: 7px; font-size: 12px; font-weight: 700; }
 .button-primary { color: var(--paper); background: #715039; }
 .button-primary:hover { background: var(--deep-brown); }
