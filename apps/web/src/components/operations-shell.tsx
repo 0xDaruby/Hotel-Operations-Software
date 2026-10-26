@@ -1,22 +1,15 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
-import type { StaffProfile, StaffRole } from '@/features/auth/staff-profile';
-import { getProfileAvatarInitial } from '@/features/auth/profile-avatar';
-import { createClient } from '@/lib/supabase/client';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { StaffProfile } from '@/features/auth/staff-profile';
 import { Home04Icon, Menu02Icon, XIcon } from '@/components/icons';
 import { getDockNavigation, getNavigationForRole } from '@/components/navigation-config';
 import { MobileBottomDock } from '@/components/mobile-bottom-dock';
 import { SidebarNavigation } from '@/components/sidebar-navigation';
+import { StaffProfileMenu } from '@/components/staff-profile-menu';
 
 const navigation = getNavigationForRole;
-
-const roleLabels: Record<StaffRole, string> = {
-  owner: 'Owner / Manager',
-  receptionist: 'Receptionist',
-  supervisor: 'Supervisor',
-};
 
 export function OperationsShell({ children, profile, attentionCount, inspectionCount, maintenanceCount, departureCount }: {
   children: ReactNode;
@@ -27,11 +20,10 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
   departureCount: number | null;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dragProgress, setDragProgress] = useState<number | null>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
-  const suppressClickUntil = useRef(0);
+  const suppressedClickTarget = useRef<Element | null>(null);
   const items = navigation(profile.role);
   const current = items.find((item) => item.href === pathname) ?? items[0];
   const { docked, overflow } = getDockNavigation(profile.role);
@@ -39,19 +31,33 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
   // drawer to offer, so its mobile surfaces (drawer, Menu button, backdrop)
   // are skipped. Desktop keeps the persistent sidebar for all roles.
   const hasDrawerOverflow = overflow.length > 0;
-  const avatarInitial = getProfileAvatarInitial(profile.role);
 
   useEffect(() => {
     if (profile.role !== 'owner' || !hasDrawerOverflow) return;
     const mobile = window.matchMedia('(max-width: 760px)');
-    let gesture: { x: number; y: number; progress: number; horizontal: boolean } | null = null;
+    let gesture: { x: number; y: number; distance: number; start: number; progress: number; horizontal: boolean; target: Element | null } | null = null;
+    let frame = 0;
+    const shell = shellRef.current;
+    function paint(progress: number) {
+      shell?.style.setProperty('--drawer-progress', String(progress));
+      shell?.classList.add('drawer-dragging');
+    }
+    function resetClick() { suppressedClickTarget.current = null; }
     function start(event: TouchEvent) {
-      if (!mobile.matches || event.touches.length !== 1) return;
+      resetClick();
+      if (!mobile.matches || event.touches.length !== 1) { cancel(); return; }
       const touch = event.touches[0];
       const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest('input, textarea, select, [role="slider"], [role="dialog"]')) return;
-      if (!menuOpen && touch.clientX > 28) return;
-      gesture = { x: touch.clientX, y: touch.clientY, progress: menuOpen ? 1 : 0, horizontal: false };
+      if (target?.closest('input, textarea, select, [role="slider"], [role="dialog"], dialog')) return;
+      if (!menuOpen && touch.clientX > 28 && !(target && sidebarRef.current?.contains(target))) return;
+      // Capture the visible position so a reversing drag never jumps to the old target.
+      const bounds = sidebarRef.current?.getBoundingClientRect();
+      const distance = (bounds?.width || 300) * 1.02;
+      const progress = Math.max(0, Math.min(1, 1 + (bounds?.left ?? -distance) / distance));
+      gesture = { x: touch.clientX, y: touch.clientY, distance, start: progress, progress, horizontal: false, target: target?.closest('button, a') ?? target };
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      if (progress > 0 && progress < 1) paint(progress);
     }
     function move(event: TouchEvent) {
       if (!gesture) return;
@@ -64,21 +70,38 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
         gesture.horizontal = true;
       }
       if (event.cancelable) event.preventDefault();
-      const width = sidebarRef.current?.getBoundingClientRect().width || 300;
-      gesture.progress = Math.max(0, Math.min(1, (menuOpen ? 1 : 0) + dx / width));
-      setDragProgress(gesture.progress);
+      gesture.progress = Math.max(0, Math.min(1, gesture.start + dx / gesture.distance));
+      if (!frame) frame = requestAnimationFrame(() => {
+        frame = 0;
+        if (gesture) paint(gesture.progress);
+      });
     }
     function end() {
       if (gesture?.horizontal) {
-        suppressClickUntil.current = Date.now() + 350;
+        suppressedClickTarget.current = gesture.target;
+        paint(gesture.progress);
         setMenuOpen(gesture.progress >= .35);
       }
-      cancel();
+      gesture = null;
+      if (frame) cancelAnimationFrame(frame);
+      // Let React commit the open/closed destination before releasing direct tracking.
+      frame = requestAnimationFrame(() => { frame = 0; shell?.classList.remove('drawer-dragging'); });
     }
     function click(event: MouseEvent) {
-      if (Date.now() < suppressClickUntil.current) { event.preventDefault(); event.stopPropagation(); }
+      const target = event.target instanceof Node ? event.target : null;
+      if (target && suppressedClickTarget.current?.contains(target)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      resetClick();
     }
-    function cancel() { gesture = null; setDragProgress(null); }
+    function cancel() {
+      gesture = null;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      shell?.classList.remove('drawer-dragging');
+    }
+    document.addEventListener('pointerdown', resetClick, { passive: true });
     document.addEventListener('touchstart', start, { passive: true });
     document.addEventListener('touchmove', move, { passive: false });
     document.addEventListener('touchend', end);
@@ -91,7 +114,9 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
       document.removeEventListener('touchend', end);
       document.removeEventListener('touchcancel', cancel);
       document.removeEventListener('click', click, true);
+      document.removeEventListener('pointerdown', resetClick);
       mobile.removeEventListener('change', cancel);
+      cancel();
     };
   }, [profile.role, hasDrawerOverflow, menuOpen]);
 
@@ -123,16 +148,10 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
     };
   }, [menuOpen]);
 
-  async function signOut() {
-    await createClient().auth.signOut();
-    router.replace('/login');
-    router.refresh();
-  }
-
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to workspace</a>
-      <div className={`app-shell${dragProgress !== null ? ' drawer-dragging' : ''}`} style={dragProgress !== null ? { '--drawer-progress': dragProgress } as CSSProperties : undefined}>
+      <div ref={shellRef} className="app-shell">
         <aside
           ref={sidebarRef}
           id="hotel-navigation"
@@ -165,14 +184,10 @@ export function OperationsShell({ children, profile, attentionCount, inspectionC
               <span className="hotel-symbol" aria-hidden="true"><Home04Icon className="icon icon-sm" /></span>
               <strong>Hotel Operations</strong><span>/ Staff workspace</span>
             </div>
-            <div className="profile-summary">
-              <span className="profile-avatar" aria-hidden="true">{avatarInitial}</span>
-              <span className="profile-copy"><strong>{profile.displayName}</strong><small>{roleLabels[profile.role]}</small></span>
-              <button className="sign-out" onClick={signOut} type="button">Sign out</button>
-            </div>
+            <StaffProfileMenu key={pathname} profile={profile} />
           </header>
 
-          <main key={pathname} className="content page-motion" id="main-content" tabIndex={-1}>
+          <main key={pathname} className="content" id="main-content" tabIndex={-1}>
             <header className="page-heading">
               <h1 id="workspace-page-heading">{current?.label}</h1>
               {current?.subtitle ? <p>{current.subtitle}</p> : null}

@@ -19,7 +19,7 @@ async function startUiFixture() {
       export const createClient=()=>({
         rpc:(name,params)=>request({kind:'rpc',name,params}),
         from:(table)=>{let value;const chain={select:()=>chain,eq:(_,next)=>{value=next;return chain},maybeSingle:()=>request({kind:'lookup',table,value})};return chain;},
-        auth:{signOut:async()=>({error:null})}
+        auth:{signOut:async()=>window.fixtureSignOut ? window.fixtureSignOut() : ({error:null})}
       });`;
     const bundle = await esbuild.build({
       absWorkingDir: web, entryPoints: [join(__dirname, 'fixtures/ui-validation.jsx')],

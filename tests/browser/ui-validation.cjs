@@ -48,7 +48,7 @@ async function main() {
       await page.keyboard.press('Tab');
       assert.equal(await dialog.evaluate(el=>el.contains(document.activeElement)||document.activeElement===document.body),true,'Tab must not focus underlying page controls; native browser chrome is allowed');
     }
-    assert.equal(await page.locator('.topbar .sign-out').evaluate(el=>{el.focus();return document.activeElement===el;}),false,'native modality makes background controls inert');
+    assert.equal(await page.locator('.topbar .profile-trigger').evaluate(el=>{el.focus();return document.activeElement===el;}),false,'native modality makes background controls inert');
     await dialog.getByRole('combobox',{name:'Outcome',exact:true}).selectOption('attention');
     await dialog.getByRole('checkbox').check();
     assert.equal(await dialog.getByRole('button',{name:'Save outcome',exact:true}).isDisabled(),true);
