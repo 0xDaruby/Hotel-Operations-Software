@@ -31,6 +31,8 @@
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
+  --press-duration: 120ms;
+  --press-scale: .97;
   /* Component tokens */
   --card-bg: var(--surface);
   --card-border: var(--border-subtle);
@@ -45,6 +47,8 @@ body { margin: 0; color: var(--ink); background: var(--canvas); font: 14px/1.5 v
 button, input, select, textarea { font: inherit; }
 input::placeholder, textarea::placeholder { color: var(--text-secondary); opacity: 1; }
 button { color: inherit; cursor: pointer; }
+/* Suppress the browser tap overlay; keep component press states and keyboard focus. */
+button, a, summary, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
 h1, h2, p { margin: 0; }
 h1, h2 { font-family: var(--display); font-weight: 400; text-wrap: balance; }
@@ -506,7 +510,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transition: background-color var(--dock-transition), color var(--dock-transition), transform var(--dock-transition);
 }
 .mobile-dock-item:hover { color: var(--ink); background: #302a230d; }
-.mobile-dock-item:active { transform: scale(.97); }
 .mobile-dock-icon { display: grid; place-items: center; }
 .mobile-dock-label {
   max-width: 100%;
@@ -762,6 +765,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @keyframes success-banner-enter { from { opacity: 0; transform: translate(-50%, -18px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes success-banner-leave { to { opacity: 0; transform: translate(-50%, -12px); } }
 @media (prefers-reduced-motion: reduce) { .success-banner, .success-banner-leaving { animation: none; } }
+
+/* Quick press feedback without moving layout or delaying the action. */
+@media (prefers-reduced-motion: no-preference) {
+  :is(.button, .text-button, .sign-out, .menu-button, .menu-close, .ops-dialog-close, .password-visibility-toggle, .main-nav a, .mobile-dock-item, .success-banner button) {
+    transition: scale var(--press-duration) ease-out, background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+  :is(.button, .text-button, .sign-out, .menu-button, .menu-close, .ops-dialog-close, .password-visibility-toggle, .main-nav a, .mobile-dock-item, .success-banner button):not(:disabled):not([aria-disabled="true"]):active {
+    scale: var(--press-scale);
+  }
+}
 
 /* Forms follow their available workspace width, including magnified content. */
 @container workspace (max-width: 600px) {
