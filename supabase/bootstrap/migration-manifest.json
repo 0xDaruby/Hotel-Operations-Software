@@ -74,6 +74,11 @@
       "id": "0013",
       "file": "supabase/migrations/0013_owner_statistics.sql",
       "sha256": "d1bfc821e8964e50863c36a0829bd76437a09ad191580cca0f75085e65b8f997"
+    },
+    {
+      "id": "0014",
+      "file": "supabase/migrations/0014_staff_account_lifecycle.sql",
+      "sha256": "7cc0ef349206b3a7684d4c57b17b012adacd9b4642c011d8be576cb8540241fa"
     }
   ]
 }

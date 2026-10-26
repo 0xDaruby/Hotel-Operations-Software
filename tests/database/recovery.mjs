@@ -16,6 +16,8 @@ async function snapshot(db) {
 
 export async function verifyLocalRecovery(db, PGlite) {
   await db.exec('RESET ROLE');
+  const recoveryStaff = (await db.query("SELECT user_id FROM public.staff_profiles WHERE active AND role='receptionist' ORDER BY user_id LIMIT 1")).rows[0];
+  const recoverySession = (await db.query('INSERT INTO auth.sessions(id,user_id,created_at) VALUES (gen_random_uuid(),$1,clock_timestamp()) RETURNING id',[recoveryStaff.user_id])).rows[0].id;
   const before = await snapshot(db);
   const archive = await db.dumpDataDir();
   const restored = new PGlite({ loadDataDir: archive });
@@ -26,6 +28,7 @@ export async function verifyLocalRecovery(db, PGlite) {
       WHERE active AND role='receptionist' ORDER BY user_id LIMIT 1`)).rows[0];
     assert.ok(staff, 'recovery rehearsal requires an active receptionist fixture');
     await restored.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [staff.user_id]);
+    await restored.query("SELECT set_config('request.jwt.claims',$1,false)", [JSON.stringify({session_id:recoverySession})]);
     await restored.exec('SET ROLE authenticated');
     const foreignRooms = (await restored.query('SELECT id FROM public.rooms WHERE property_id <> $1', [staff.hotel_id])).rows;
     assert.equal(foreignRooms.length, 0, 'tenant RLS remains effective after restore');

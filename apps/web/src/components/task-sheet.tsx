@@ -14,10 +14,11 @@ type TaskSheetProps = {
   submitLabel?: string;
   canSubmit?: boolean;
   closeLabel?: string;
+  submitVariant?: 'primary' | 'danger';
 };
 
 /** Short operational forms share one responsive surface and dismissal contract. */
-export function TaskSheet({ title, children, onClose, onSubmit, dirty, pending, submitLabel, canSubmit = true, closeLabel = 'Cancel' }: TaskSheetProps) {
+export function TaskSheet({ title, children, onClose, onSubmit, dirty, pending, submitLabel, canSubmit = true, closeLabel = 'Cancel', submitVariant = 'primary' }: TaskSheetProps) {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const fields = useRef<HTMLFieldSetElement>(null);
   const wasConfirming = useRef(false);
@@ -46,7 +47,7 @@ export function TaskSheet({ title, children, onClose, onSubmit, dirty, pending, 
         </div>
           <div className="task-sheet-footer" inert={confirmDiscard}>
             <button type="button" className="task-sheet-cancel" disabled={pending} onClick={requestClose}>{closeLabel}</button>
-            {submitLabel ? <button type="submit" className="button button-primary" disabled={pending || !canSubmit}>{submitLabel}</button> : null}
+            {submitLabel ? <button type="submit" className={`button button-${submitVariant}`} disabled={pending || !canSubmit}>{submitLabel}</button> : null}
           </div>
       </form>
       {confirmDiscard ? <DiscardConfirmation onKeepEditing={() => setConfirmDiscard(false)} onDiscard={onClose} /> : null}

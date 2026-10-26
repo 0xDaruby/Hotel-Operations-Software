@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 
 import { verifySerializationContract, verifyPilotLifecycle } from './pilot-lifecycle.mjs';
 import { verifyOwnerStatistics } from './owner-statistics.mjs';
+import { verifyStaffLifecycle } from './staff-lifecycle.mjs';
 import { verifyLocalRecovery } from './recovery.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -21,6 +22,8 @@ try {
     CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA auth;
     CREATE TABLE auth.users (id uuid PRIMARY KEY, email text, raw_app_meta_data jsonb DEFAULT '{}', created_at timestamptz DEFAULT now());
+    CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,created_at timestamptz DEFAULT now());
+    CREATE TABLE auth.refresh_tokens(user_id varchar,session_id uuid,revoked boolean DEFAULT false);
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
       $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     GRANT USAGE ON SCHEMA public, auth TO authenticated, service_role;
@@ -37,6 +40,16 @@ try {
   await db.exec(await readFile(resolve(root, 'supabase/bootstrap/foundation.sql'), 'utf8'));
   const migrations = (await readdir(resolve(root, 'supabase/migrations'))).filter(name => name.endsWith('.sql')).sort();
   for (const name of migrations) {
+    // Regression mode mirrors the existing hotel's original policy name.
+    if (name.startsWith('0014_') && process.argv.includes('--legacy-profile-policy')) {
+      await db.exec('ALTER POLICY staff_read_profiles ON public.staff_profiles RENAME TO "Staff can view permitted profiles"');
+    }
+    if (name.startsWith('0014_') && process.argv.includes('--renamed-read-policies')) {
+      await db.exec(`DO $$ DECLARE policy record; BEGIN
+        FOR policy IN SELECT tablename,policyname FROM pg_policies WHERE schemaname='public' AND cmd IN ('SELECT','ALL')
+        LOOP EXECUTE format('ALTER POLICY %I ON public.%I RENAME TO %I',policy.policyname,policy.tablename,'renamed_'||policy.policyname); END LOOP;
+      END $$;`);
+    }
     const file = name.startsWith('0004_') ? 'supabase/bootstrap/repair-scheduler.sql' : `supabase/migrations/${name}`;
     let sql = await readFile(resolve(root, file), 'utf8');
     if (name.startsWith('0004_')) sql = sql.replace('CREATE EXTENSION IF NOT EXISTS pg_cron;', '-- pg_cron metadata shim already created');
@@ -130,6 +143,7 @@ try {
     INSERT INTO public.rooms(id,property_id,category_id,room_number)
     VALUES ('30000000-0000-0000-0000-000000000099','10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','102');`);
   await verifyLocalRecovery(db, PGlite);
+  await verifyStaffLifecycle(db);
   const job = (await db.query("SELECT schedule,command FROM cron.job WHERE jobname='daily-inspections'")).rows;
   assert.equal(job.length, 1);
   assert.equal(job[0].schedule, '0 7 * * *');

@@ -12,6 +12,7 @@ import { summarizeInventoryMetrics } from '@/features/inventory/inventory-summar
 import { buildOwnerAttentionItems } from '@/features/inventory/owner-overview-model';
 import { ArrivalForm } from '@/features/stays/arrival-form';
 import { PaymentsView } from '@/features/stays/payments-view';
+import { StaffWorkspace } from '@/features/staff/staff-workspace';
 
 const role = new URLSearchParams(location.search).get('role') || 'supervisor';
 window.fixtureRole = role;
@@ -49,7 +50,8 @@ function App() {
   const attention = buildOwnerAttentionItems({ now: data.now, stays: data.stays, inspections: data.inspections, maintenanceIssues: data.issues, roomNumberById: new Map(rooms.map(r => [r.id, r.number])) });
   const route = location.pathname;
   let content;
-  if (route === '/inspections') content = <InspectionWorkspace requirements={inspections} canRecord={role === 'supervisor' || role === 'secondSupervisor'} />;
+  if (route === '/staff') content = <StaffWorkspace staff={data.staff} />;
+  else if (route === '/inspections') content = <InspectionWorkspace requirements={inspections} canRecord={role === 'supervisor' || role === 'secondSupervisor'} />;
   else if (route === '/maintenance') content = <MaintenanceWorkspace issues={issues} rooms={rooms.map(r => ({ id: r.id, roomNumber: r.number }))} canReport={role !== 'receptionist'} canResolve={role !== 'receptionist'} />;
   else if (route === '/rooms') content = <RoomBoard rooms={rooms} categories={inventory.categories} occupiedRoomIds={occupied} inspectionDueRoomIds={due} maintenanceIssueCountByRoomId={issueCounts} />;
   else if (route === '/stays') content = <><h2>Record arrival</h2><ArrivalForm readyRooms={readyRooms} /></>;

@@ -3,10 +3,10 @@ import { getStaffMembers } from "@/features/staff/staff-management";
 import { StaffWorkspace } from "@/features/staff/staff-workspace";
 export default async function StaffManagementPage() {
   await requireStaffProfile(["owner"]);
-  const { staff, managementAvailable } = await getStaffMembers();
+  const { staff, managementAvailable, lifecycleAvailable } = await getStaffMembers();
   return (
     <section className="staff-page" aria-labelledby="workspace-page-heading">
-      <StaffWorkspace staff={staff} managementAvailable={managementAvailable} />
+      <StaffWorkspace staff={staff} managementAvailable={managementAvailable} lifecycleAvailable={lifecycleAvailable} />
     </section>
   );
 }

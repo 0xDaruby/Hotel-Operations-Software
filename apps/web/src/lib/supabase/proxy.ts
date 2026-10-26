@@ -20,7 +20,7 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const isSignedIn = Boolean(data?.claims);
-  const isProtectedRoute = !['/login', '/auth/confirm', '/auth/complete'].includes(request.nextUrl.pathname);
+  const isProtectedRoute = !['/login', '/auth/confirm', '/auth/complete', '/auth/staff-access'].includes(request.nextUrl.pathname);
 
   if (!isSignedIn && isProtectedRoute) {
     const loginUrl = request.nextUrl.clone();

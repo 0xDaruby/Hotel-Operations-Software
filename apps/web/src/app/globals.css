@@ -694,6 +694,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .staff-card fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .staff-section-heading { margin: 0; font-size: 1.17em; }
 .staff-card p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.staff-delete { color: var(--status-danger-fg); }
 .staff-card button { justify-self: start; max-width: 100%; white-space: normal; }
 .payments-heading { display: flex; align-items: center; gap: 8px; }
 .inspect-action { gap: 7px; }

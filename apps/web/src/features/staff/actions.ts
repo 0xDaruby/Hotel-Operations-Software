@@ -5,6 +5,7 @@ import { requireStaffProfile } from "@/features/auth/staff-profile";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, staffSetupRedirect } from "@/lib/supabase/admin";
 import { provisionStaff, type StaffActionResult } from "./provisioning";
+import { deleteStaffAccount } from './account-lifecycle';
 export async function createStaffAction(
   input: unknown,
 ): Promise<StaffActionResult> {
@@ -119,6 +120,8 @@ export async function setStaffActiveAction(input: {
   )
     return { ok: false, error: "Provide a valid staff account and reason." };
   const supabase = await createClient();
+  const lifecycle = await supabase.rpc('get_staff_access_status');
+  if (lifecycle.error || lifecycle.data !== 'ready') return { ok: false, error: 'Staff access controls are unavailable. Refresh or contact the administrator.' };
   const { error } = await supabase.rpc("set_staff_active", {
     p_user_id: input.userId,
     p_expected_active: input.expectedActive,
@@ -133,8 +136,44 @@ export async function setStaffActiveAction(input: {
         ok: true,
         message: input.active
           ? "Staff access activated."
-          : "Staff access deactivated.",
+          : "Staff access deactivated and sessions revoked.",
       };
+}
+
+export async function deleteStaffAccountAction(input: unknown): Promise<StaffActionResult> {
+  await requireStaffProfile(['owner']);
+  try {
+    const admin = createAdminClient();
+    const supabase = await createClient();
+    const result = await deleteStaffAccount(input, {
+      prepare: async details => {
+        const { data, error } = await supabase.rpc('prepare_staff_deletion', {
+          p_user_id: details.userId, p_reason: details.reason, p_confirmation: details.confirmation,
+        });
+        if (error || typeof data !== 'string') throw Error('Deletion was not authorized.');
+        return data;
+      },
+      authUserExists: async userId => {
+        const { data, error } = await admin.auth.admin.getUserById(userId);
+        if (error?.status === 404 || error?.code === 'user_not_found') return false;
+        if (error || !data.user) throw Error('Unable to confirm Auth account.');
+        return true;
+      },
+      deleteAuthUser: async userId => {
+        const { error } = await admin.auth.admin.deleteUser(userId, false);
+        if (error) throw Error('Auth deletion failed.');
+      },
+      complete: async (requestId, userId) => {
+        const { error } = await admin.rpc('complete_staff_deletion', { p_user_id: userId, p_request_id: requestId });
+        if (error) throw Error('Deletion confirmation failed.');
+      },
+    });
+    revalidatePath('/staff');
+    revalidatePath('/overview');
+    return result;
+  } catch {
+    return { ok: false, error: 'Staff account deletion is unavailable. The account has not been reactivated.' };
+  }
 }
 
 export async function cancelStaffSetupAction(input: {

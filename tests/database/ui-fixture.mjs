@@ -14,6 +14,8 @@ export async function createUiDatabase() {
       CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
       CREATE SCHEMA auth;
       CREATE TABLE auth.users(id uuid PRIMARY KEY, email text, raw_app_meta_data jsonb DEFAULT '{}', created_at timestamptz DEFAULT now());
+    CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,created_at timestamptz DEFAULT now());
+    CREATE TABLE auth.refresh_tokens(user_id varchar,session_id uuid,revoked boolean DEFAULT false);
       CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
       GRANT USAGE ON SCHEMA public, auth TO authenticated, service_role;
       GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated, service_role;

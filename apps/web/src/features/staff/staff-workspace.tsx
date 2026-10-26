@@ -1,20 +1,25 @@
 "use client";
 import { useSuccessBanner } from '@/components/success-banner';
-import { useState, useTransition } from "react";
-import { Dialog } from '@/components/dialog';
+import { useRef, useState, useTransition } from "react";
+import { TaskSheet } from '@/components/task-sheet';
 import type { StaffMember } from "./staff-management";
 import {
   createStaffAction,
   retryStaffSetupAction,
   setStaffActiveAction,
   cancelStaffSetupAction,
+  deleteStaffAccountAction,
 } from "./actions";
 import type { StaffActionResult } from "./provisioning";
-export function StaffWorkspace({ staff, managementAvailable = true }: { staff: StaffMember[]; managementAvailable?: boolean }) {
+export function StaffWorkspace({ staff, managementAvailable = true, lifecycleAvailable = true }: { staff: StaffMember[]; managementAvailable?: boolean; lifecycleAvailable?: boolean }) {
   const showSuccess = useSuccessBanner();
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<StaffActionResult | null>(null);
   const [selected, setSelected] = useState<StaffMember | null>(null);
+  const [selectedError, setSelectedError] = useState('');
+  const [deleting, setDeleting] = useState<StaffMember | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const deletionInFlight = useRef(false);
   function presentResult(result: StaffActionResult, name?: string, summary?: string) {
     if (result.ok && result.emailSent !== false && !result.error) {
       showSuccess(summary ?? result.message ?? 'Staff account updated.', name);
@@ -108,7 +113,9 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
               <span
                 className={`status-badge ${member.active ? "status-occupied" : "status-muted"}`}
               >
-                {member.setupPending
+                {member.deletionPending
+                  ? 'Deletion pending'
+                  : member.setupPending
                   ? "Setup pending"
                   : cancelled(member)
                     ? "Setup cancelled"
@@ -128,7 +135,7 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
               </div>
             </dl>
             {managementAvailable && member.role !== "owner" &&
-              !cancelled(member) &&
+              !cancelled(member) && !member.deletionPending &&
               (member.setupPending ? (
                 <>
                   <button
@@ -153,7 +160,7 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                     type="button"
                     disabled={pending}
                     className="button button-secondary"
-                    onClick={() => setSelected(member)}
+                    onClick={() => { setSelectedError(''); setSelected(member); }}
                   >
                     Cancel setup
                   </button>
@@ -163,25 +170,25 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                   type="button"
                   disabled={pending}
                   className="button button-secondary"
-                  onClick={() => setSelected(member)}
+                  onClick={() => { setSelectedError(''); setSelected(member); }}
                 >
                   {member.active ? "Deactivate access" : "Activate access"}
                 </button>
               ))}
+            {managementAvailable && lifecycleAvailable && member.role !== 'owner' && !member.active && !member.setupPending && (
+              <button type="button" className="text-button staff-delete" disabled={pending} onClick={() => { setDeleteError(''); setDeleting(member); }}>
+                {member.deletionPending ? 'Retry delete account' : 'Delete account'}
+              </button>
+            )}
+            {member.deletionPending ? <p>Deletion has not finished. Access remains inactive; retry to complete it.</p> : null}
           </article>
         ))}
       </div>
       {selected && (
-        <Dialog open onClose={() => { if (!pending) setSelected(null); }} title={`${selected.setupPending ? 'Cancel setup for' : selected.active ? 'Deactivate' : 'Activate'} ${selected.displayName}?`}>
-          <p>
-            {selected.setupPending
-              ? "This cancels setup and keeps access inactive. Existing setup links cannot activate this account."
-              : selected.active
-                ? "This removes access to hotel operations."
-                : "This restores access to hotel operations."}
-          </p>
-          <form
-            onSubmit={(event) => {
+        <TaskSheet pending={pending} dirty={false} onClose={() => setSelected(null)} title={`${selected.setupPending ? 'Cancel setup for' : selected.active ? 'Deactivate' : 'Activate'} ${selected.displayName}?`}
+          submitVariant={selected.setupPending || selected.active ? 'danger' : 'primary'}
+          submitLabel={pending ? 'Working…' : selected.setupPending ? 'Cancel staff setup' : selected.active ? 'Deactivate access' : 'Activate access'}
+          onSubmit={(event) => {
               event.preventDefault();
               const data = new FormData(event.currentTarget);
               startTransition(async () => {
@@ -198,11 +205,19 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                         reason: String(data.get("reason") ?? ""),
                       }),
                 );
-                presentResult(result, selected.displayName, selected.setupPending ? "Staff setup cancelled" : selected.active ? "Staff access deactivated" : "Staff access activated");
-                if (result.ok) setSelected(null);
+                if (result.ok) {
+                  presentResult(result, selected.displayName, selected.setupPending ? "Staff setup cancelled" : selected.active ? "Staff access deactivated" : "Staff access activated");
+                  setSelected(null);
+                } else setSelectedError(result.error ?? 'The account could not be updated. Retry.');
               });
-            }}
-          >
+            }}>
+          <p className="dialog-note">
+            {selected.setupPending
+              ? "This cancels setup and keeps access inactive. Existing setup links cannot activate this account."
+              : selected.active
+                ? "This removes access to hotel operations and revokes sessions on all devices. Open devices will return to sign-in on their next access check."
+                : "This restores access to hotel operations. Staff must sign in again; previous sessions stay revoked."}
+          </p>
             <label className="inventory-field">
               Reason
               <textarea
@@ -212,28 +227,30 @@ export function StaffWorkspace({ staff, managementAvailable = true }: { staff: S
                 disabled={pending}
               />
             </label>
-            <button
-              type="submit"
-              disabled={pending}
-              className="button button-primary"
-            >
-              Confirm{" "}
-              {selected.setupPending
-                ? "setup cancellation"
-                : selected.active
-                  ? "deactivation"
-                  : "activation"}
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              className="button button-secondary"
-              onClick={() => setSelected(null)}
-            >
-              Cancel
-            </button>
-          </form>
-        </Dialog>
+          {selectedError ? <p className="form-error" role="alert">{selectedError}</p> : null}
+        </TaskSheet>
+      )}
+      {deleting && (
+        <TaskSheet title={`Delete ${deleting.displayName}'s account?`} pending={pending} dirty={false} onClose={() => setDeleting(null)}
+          submitVariant="danger" submitLabel={pending ? 'Deleting…' : 'Delete account permanently'} onSubmit={event => {
+            event.preventDefault();
+            if (deletionInFlight.current) return;
+            const data = new FormData(event.currentTarget);
+            deletionInFlight.current = true;
+            setDeleteError('');
+            startTransition(async () => {
+              try {
+                const result = await runAction(() => deleteStaffAccountAction({ userId: deleting.userId, reason: data.get('reason'), confirmation: data.get('confirmation') }));
+                if (result.ok) { presentResult(result, deleting.displayName); setDeleting(null); }
+                else setDeleteError(result.error ?? 'Deletion could not be completed. Retry.');
+              } finally { deletionInFlight.current = false; }
+            });
+          }}>
+            <p className="dialog-note">This permanently removes their sign-in account. It cannot be reactivated. Past payments, inspections, and activity history keep their staff attribution.</p>
+            <label className="inventory-field">Reason<textarea name="reason" required maxLength={500} disabled={pending} /></label>
+            <label className="inventory-field">Type DELETE to confirm<input name="confirmation" required pattern="DELETE" autoComplete="off" spellCheck={false} disabled={pending} /></label>
+            {deleteError ? <p className="form-error" role="alert">{deleteError}</p> : null}
+        </TaskSheet>
       )}
     </>
   );

@@ -10,9 +10,10 @@ export type StaffMember = {
   setupPending: boolean;
   mustChangePassword: boolean;
   setupCancelled: boolean;
+  deletionPending: boolean;
 };
 
-export async function getStaffMembers(): Promise<{ staff: StaffMember[]; managementAvailable: boolean }> {
+export async function getStaffMembers(): Promise<{ staff: StaffMember[]; managementAvailable: boolean; lifecycleAvailable: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_managed_staff");
   if (error?.code === 'PGRST202') {
@@ -22,10 +23,11 @@ export async function getStaffMembers(): Promise<{ staff: StaffMember[]; managem
       .select('user_id, hotel_id, display_name, role, active, must_change_password')
       .order('display_name');
     if (existing.error) throw new Error(`Unable to load staff members: ${existing.error.message}`);
-    return { staff: mapStaff(existing.data ?? []), managementAvailable: false };
+    return { staff: mapStaff(existing.data ?? []), managementAvailable: false, lifecycleAvailable: false };
   }
   if (error) throw new Error(`Unable to load staff members: ${error.message}`);
-  return { staff: mapStaff((data ?? []) as Record<string, unknown>[]), managementAvailable: true };
+  const rows = (data ?? []) as Record<string, unknown>[];
+  return { staff: mapStaff(rows), managementAvailable: true, lifecycleAvailable: rows.some(row => 'deletion_pending' in row) };
 }
 
 function mapStaff(rows: Record<string, unknown>[]): StaffMember[] {
@@ -38,6 +40,7 @@ function mapStaff(rows: Record<string, unknown>[]): StaffMember[] {
     setupPending: Boolean(row.setup_pending),
     mustChangePassword: Boolean(row.must_change_password),
     setupCancelled: Boolean(row.setup_cancelled),
+    deletionPending: Boolean(row.deletion_pending),
     hotelId: String(row.hotel_id ?? ""),
   }));
 }

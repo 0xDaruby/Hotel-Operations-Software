@@ -59,6 +59,7 @@ export function Dialog({ open, onClose, title, children, presentation = 'dialog'
         if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) onClose();
       }}
       onCancel={(event) => {
+        if (closeDisabled) { event.preventDefault(); return; }
         if (presentation === 'sheet') {
           event.preventDefault();
           if (!closeDisabled) onClose();
