@@ -1,15 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isStaffSetupType } from '@/features/auth/setup-link';
 
 export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
   const type = request.nextUrl.searchParams.get('type');
   const code = request.nextUrl.searchParams.get('code');
-  // Staff email setup uses recovery tokens and one fixed destination. Never
+  // Invitations and older recovery setup links have one fixed destination. Never
   // allow an email query parameter to redirect to another site.
-  if (tokenHash && type === 'recovery') {
+  if (tokenHash && isStaffSetupType(type)) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (!error) return NextResponse.redirect(new URL('/set-password', request.url));
   }
   if (code) {

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { hasStaffSetupResponse } from './setup-link';
 
 const reasonMessages: Record<string, string> = {
   inactive: 'This staff account is inactive. Ask the Owner / Manager for access.',
@@ -27,6 +28,11 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   useEffect(() => {
+    // The root setup-link bridge consumes this link. Do not clear its session
+    // during a redirect from a previously signed-in account.
+    if (hasStaffSetupResponse(window.location.hash)) {
+      return;
+    }
     if (!reason) return;
     void createClient().auth.signOut({ scope: 'local' });
   }, [reason]);
@@ -46,7 +52,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
     });
 
     if (signInError) {
-      setError('We could not sign you in. Check your email and password.');
+      setError('We could not sign you in. Check your email and password. New staff must open their setup email and choose a password first.');
       setIsSubmitting(false);
       return;
     }

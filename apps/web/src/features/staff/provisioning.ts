@@ -31,7 +31,7 @@ export type ProvisionDependencies = {
   createUser(input: StaffInput): Promise<string>;
   createProfile(userId: string, input: StaffInput): Promise<void>;
   deleteUser(userId: string): Promise<void>;
-  sendSetup(email: string): Promise<void>;
+  sendSetup(email: string, userId: string): Promise<void>;
 };
 export type StaffActionResult = {
   ok: boolean;
@@ -80,7 +80,7 @@ export async function provisionStaff(
     };
   }
   try {
-    await deps.sendSetup(input.email);
+    await deps.sendSetup(input.email, userId);
     return {
       ok: true,
       emailSent: true,

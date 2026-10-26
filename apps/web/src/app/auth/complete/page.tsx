@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { staffSetupFragment } from '@/features/auth/setup-link';
 
 export default function CompleteStaffEmailPage() {
   const router = useRouter();
@@ -11,18 +12,16 @@ export default function CompleteStaffEmailPage() {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    const params = new URLSearchParams(window.location.hash.slice(1));
+    const session = staffSetupFragment(window.location.hash);
     window.history.replaceState(null, '', window.location.pathname);
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
     void (async () => {
       await Promise.resolve();
-      if (params.get('type') !== 'recovery' || !accessToken || !refreshToken) {
+      if (!session) {
         setError('This setup link is invalid or expired. Ask the Owner / Manager to send a new setup email.');
         return;
       }
       try {
-        const { error: sessionError } = await createClient().auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        const { error: sessionError } = await createClient().auth.setSession(session);
         if (sessionError) throw sessionError;
         router.replace('/set-password');
         router.refresh();

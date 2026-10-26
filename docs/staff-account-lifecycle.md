@@ -2,6 +2,31 @@
 
 This feature separates reversible access removal from permanent login deletion.
 
+## Staff onboarding
+
+The manager creates a staff profile, then the server sends a Supabase invitation to the new, unconfirmed email identity. Access stays inactive until the recipient opens the invitation, chooses and confirms a 12–72 character password on **Set your password**, and the password update and profile completion succeed. The app then opens the assigned role workspace. No extra onboarding page is required.
+
+Callback handling accepts `invite` links and existing `recovery` setup links. Fragment-based links use the dedicated `/auth/complete` consumer, which removes tokens from browser history before establishing the session. A root-level bridge also handles links that Supabase sends to the application's Site URL, including when the browser already has a different staff session.
+
+Supabase confirms an invitation's email when the link is opened, before the staff member chooses their password. A retry for this confirmed-but-unfinished account (or an older confirmed pending account) therefore uses recovery internally. It must still read as account setup to the recipient. Do not delete/recreate an identity to resend setup.
+
+### Required hosted Auth email configuration
+
+In this hotel's Supabase **Authentication > Email Templates**, apply:
+
+The hosted dashboard currently requires either custom SMTP or a Pro plan to edit template subjects/bodies. This project's custom SMTP switch was inspected and is disabled. Do not claim that repository templates were applied while this restriction remains. New accounts can use Supabase's standard invitation without custom SMTP; confirmed-but-unfinished retries retain the default recovery wording until the template can be configured. Do not enable SMTP until working provider credentials and a verified sender are available, or upgrade the plan without the user's authorization.
+
+- **Invite user** subject: `You're invited to your hotel workspace`; body: `supabase/templates/staff-invite.html`.
+- **Reset password** subject: `Complete your staff account setup`; body: `supabase/templates/staff-setup-retry.html`.
+
+The application currently uses recovery emails only for manager-authorized pending staff setup. If a separate forgotten-password feature is added, give recovery emails neutral password-management wording or a dedicated delivery path before enabling it.
+
+In **URL Configuration**, set the production Site URL to `https://hotel-operations-software.netlify.app` and allow `https://hotel-operations-software.netlify.app/auth/confirm?next=/set-password`. Keep `WEB_ORIGIN` on Netlify equal to the production origin. The application fixes the post-verification destination to `/set-password` and does not trust a link's `next` query for navigation.
+
+On 2026-10-26, the hosted dashboard still had Site URL `http://localhost:3000` and only the Netlify `/login` path on its production redirect list. The Site URL was corrected to the production origin and the exact setup callback above was added; Supabase confirmed both saves. Existing local/Cloudflare entries were left unchanged. This fixes redirect configuration, not hosted email wording or end-to-end inbox/session verification.
+
+Repository templates are deployment sources; committing them alone does not update hosted Supabase emails. Verify those settings before claiming the welcome/retry emails are configured. Existing emails retain their original wording; request a new setup email after applying the templates.
+
 - **Deactivate access:** the existing owner-only, same-hotel operation sets access inactive, deletes that staff member's Auth sessions and refresh tokens in the same database transaction, and records the reason. Reactivation also revokes sessions so an older login cannot regain access.
 - **Delete account:** available for inactive non-owner staff after password setup is completed or cancelled. The owner supplies a reason and types `DELETE`. A database request locks the account against activation, then the server calls Supabase's official hard-delete Auth API. A service-only completion operation confirms Auth removal and records completion.
 - **History:** staff profile UUIDs and names remain as historical references. Stays, payments, inspections, maintenance and activity records are not deleted. The deleted login disappears from the staff directory and cannot be reactivated; a future invitation creates a new identity.

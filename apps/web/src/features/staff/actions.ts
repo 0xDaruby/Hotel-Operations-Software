@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, staffSetupRedirect } from "@/lib/supabase/admin";
 import { provisionStaff, type StaffActionResult } from "./provisioning";
 import { deleteStaffAccount } from './account-lifecycle';
+import { sendSetupEmail } from '@/lib/supabase/staff-setup-email';
 export async function createStaffAction(
   input: unknown,
 ): Promise<StaffActionResult> {
@@ -19,7 +20,7 @@ export async function createStaffAction(
         const { data, error } = await admin.auth.admin.createUser({
           email: details.email,
           password: randomBytes(48).toString("base64url"),
-          email_confirm: true,
+          email_confirm: false,
           app_metadata: { provisioned_by: actor.userId },
         });
         if (error || !data.user) throw Error("Unable to provision");
@@ -44,12 +45,7 @@ export async function createStaffAction(
         const { error } = await admin.auth.admin.deleteUser(userId);
         if (error) throw Error(error.message);
       },
-      sendSetup: async (email) => {
-        const { error } = await admin.auth.resetPasswordForEmail(email, {
-          redirectTo,
-        });
-        if (error) throw Error(error.message);
-      },
+      sendSetup: (email, userId) => sendSetupEmail(admin, userId, email, redirectTo),
     });
     revalidatePath("/staff");
     revalidatePath("/overview");
@@ -78,15 +74,7 @@ export async function retryStaffSetupAction(
     });
     if (error || typeof data !== "string")
       return { ok: false, error: "No pending account is available." };
-    const { error: sendError } =
-      await createAdminClient().auth.resetPasswordForEmail(data, {
-        redirectTo,
-      });
-    if (sendError)
-      return {
-        ok: false,
-        error: "Setup email could not be requested. Retry later.",
-      };
+    await sendSetupEmail(createAdminClient(), userId, data, redirectTo);
     return {
       ok: true,
       message: "Setup email requested. Ask staff to check their inbox.",
