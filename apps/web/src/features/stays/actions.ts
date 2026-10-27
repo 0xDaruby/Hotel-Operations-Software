@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { arrivalInput, extensionInput, departureInput, moveInput, correctionInput, voidInput } from '@/lib/operation-input';
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -21,13 +22,10 @@ async function runRpc(fn: string, params: Record<string, unknown>): Promise<Acti
   return { ok: true };
 }
 
-export async function recordArrivalAction(input: {
-  roomId: string;
-  guestName: string;
-  guestPhone: string;
-  paidDays: number;
-  expectedAmount: number;
-}): Promise<ActionResult> {
+export async function recordArrivalAction(value: unknown): Promise<ActionResult> {
+  const parsed = arrivalInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Check the room, guest details, paid days and amount.' };
+  const input = parsed.data;
   return runRpc('record_arrival', {
     p_room_id: input.roomId,
     p_guest_name: input.guestName.trim(),
@@ -37,12 +35,10 @@ export async function recordArrivalAction(input: {
   });
 }
 
-export async function extendStayAction(input: {
-  stayId: string;
-  addedDays: number;
-  expectedAmount: number;
-  expectedVersion: number;
-}): Promise<ActionResult> {
+export async function extendStayAction(value: unknown): Promise<ActionResult> {
+  const parsed = extensionInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Check the stay, added days and amount, then retry.' };
+  const input = parsed.data;
   return runRpc('extend_stay', {
     p_stay_id: input.stayId,
     p_added_days: input.addedDays,
@@ -51,22 +47,20 @@ export async function extendStayAction(input: {
   });
 }
 
-export async function confirmDepartureAction(input: {
-  stayId: string;
-  expectedVersion: number;
-}): Promise<ActionResult> {
+export async function confirmDepartureAction(value: unknown): Promise<ActionResult> {
+  const parsed = departureInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Select a valid stay and refresh before confirming departure.' };
+  const input = parsed.data;
   return runRpc('confirm_departure', {
     p_stay_id: input.stayId,
     p_expected_version: input.expectedVersion,
   });
 }
 
-export async function moveStayAction(input: {
-  stayId: string;
-  toRoomId: string;
-  reason: string;
-  expectedVersion: number;
-}): Promise<ActionResult> {
+export async function moveStayAction(value: unknown): Promise<ActionResult> {
+  const parsed = moveInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Select a valid stay and destination, and provide a reason of up to 1,000 characters.' };
+  const input = parsed.data;
   return runRpc('move_stay', {
     p_stay_id: input.stayId,
     p_to_room_id: input.toRoomId,
@@ -75,14 +69,10 @@ export async function moveStayAction(input: {
   });
 }
 
-export async function correctStayAction(input: {
-  stayId: string;
-  guestName: string;
-  guestPhone: string;
-  paidDays: number;
-  reason: string;
-  expectedVersion: number;
-}): Promise<ActionResult> {
+export async function correctStayAction(value: unknown): Promise<ActionResult> {
+  const parsed = correctionInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Check the stay, guest details, paid days and correction reason.' };
+  const input = parsed.data;
   return runRpc('correct_stay', {
     p_stay_id: input.stayId,
     p_guest_name: input.guestName.trim(),
@@ -93,11 +83,10 @@ export async function correctStayAction(input: {
   });
 }
 
-export async function voidStayAction(input: {
-  stayId: string;
-  reason: string;
-  expectedVersion: number;
-}): Promise<ActionResult> {
+export async function voidStayAction(value: unknown): Promise<ActionResult> {
+  const parsed = voidInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Select a valid stay and provide a reason of up to 1,000 characters.' };
+  const input = parsed.data;
   return runRpc('void_stay', {
     p_stay_id: input.stayId,
     p_reason: input.reason.trim(),

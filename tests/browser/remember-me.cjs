@@ -21,9 +21,9 @@ async function run() {
         ? <button onClick={async()=>{await createClient().auth.signOut({scope:'local'});location.assign('/login')}}>Sign out</button>
         : <main className="login-page"><section className="login-panel"><div className="login-card"><h1>Welcome back</h1><LoginForm nextPath="/account" /></div></section></main>);` },
     plugins: [{ name: 'isolated-config-and-router', setup(build) {
-      build.onResolve({ filter: /^next\/navigation$/ }, () => ({ path: 'router', namespace: 'fixture' }));
+      build.onResolve({ filter: /^next\/(navigation|link)$/ }, args => ({ path: args.path.endsWith('link') ? 'link' : 'router', namespace: 'fixture' }));
       build.onResolve({ filter: /^\.\/config$/ }, args => args.importer.endsWith('/supabase/client.ts') || args.importer.endsWith('\\supabase\\client.ts') ? ({ path: 'config', namespace: 'fixture' }) : undefined);
-      build.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ loader: 'js', contents: args.path === 'router'
+      build.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ loader: 'jsx', resolveDir: web, contents: args.path === 'link' ? `export default function Link({href,children,...props}){return <a href={href} {...props}>{children}</a>}` : args.path === 'router'
         ? `const router={replace:path=>location.assign(path),refresh:()=>{}};export const useRouter=()=>router;`
         : `export const getSupabaseConfig=()=>({url:location.origin,publishableKey:'isolated-test-key'});` }));
     } }],
@@ -31,6 +31,7 @@ async function run() {
   const css = readFileSync(join(web, 'src/app/globals.css'), 'utf8');
   let origin;
   let failLogin = false;
+  let throttleLogin = false;
   let sessionVersion = 0;
   const user = { id: '11111111-1111-4111-8111-111111111111', aud: 'authenticated', role: 'authenticated', email: 'staff@example.test', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: new Date().toISOString() };
   function session() {
@@ -47,8 +48,8 @@ async function run() {
       response.setHeader('Content-Type', 'application/json');
       if (path.endsWith('/logout')) { response.end('{}'); return; }
       if (path.endsWith('/user')) { response.end(JSON.stringify(user)); return; }
-      response.statusCode = failLogin ? 400 : 200;
-      response.end(JSON.stringify(failLogin ? { code: 'invalid_credentials', message: 'Invalid credentials' } : session())); return;
+      response.statusCode = throttleLogin ? 429 : failLogin ? 400 : 200;
+      response.end(JSON.stringify(throttleLogin ? { code: 'over_request_rate_limit', message: 'Too many requests' } : failLogin ? { code: 'invalid_credentials', message: 'Invalid credentials' } : session())); return;
     }
     if (path === '/server-refresh') {
       const incoming = parseCookieHeader(request.headers.cookie || '');
@@ -112,6 +113,11 @@ async function run() {
     await page.getByRole('alert').filter({ hasText: 'could not sign you in' }).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Sign in to operations' }).isEnabled(), true);
     assert.equal((await context.cookies()).filter(cookie => cookie.name.startsWith('sb-')).length, 0);
+    throttleLogin = true;
+    await page.getByRole('button', { name: 'Sign in to operations' }).click();
+    await page.getByRole('alert').filter({ hasText: 'Too many sign-in attempts' }).waitFor();
+    assert.equal((await context.cookies()).filter(cookie => cookie.name.startsWith('sb-')).length, 0);
+    throttleLogin = false;
     await page.goto(`${origin}/login`);
     await page.getByRole('textbox', { name: 'Email address' }).fill('staff@example.test');
     await page.getByLabel('Password', { exact: true }).fill('isolated-password');

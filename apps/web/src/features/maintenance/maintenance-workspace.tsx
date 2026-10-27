@@ -1,13 +1,14 @@
 'use client';
 
 import { useSuccessBanner } from '@/components/success-banner';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { RepairIcon } from '@/components/icons';
 import { TaskSheet } from '@/components/task-sheet';
 import { formatDateTime } from '@/features/stays/format';
 import { formatLagosDateTime } from '@/features/inventory/owner-overview-time';
 import { reportMaintenanceIssueAction, resolveMaintenanceIssueAction } from './actions';
 import type { MaintenanceIssue, MaintenanceIssueType, MaintenanceRoom } from './maintenance';
+import { maintenanceComments } from './maintenance-comments';
 
 type MaintenanceWorkspaceProps = {
   issues: MaintenanceIssue[];
@@ -23,6 +24,23 @@ const issueTypeLabels: Record<MaintenanceIssueType, string> = {
   electrical: 'Electrical',
   other: 'Other',
 };
+
+function QuickComments({ issueType, mode, onChoose }: {
+  issueType: MaintenanceIssueType;
+  mode: 'report' | 'resolution';
+  onChoose: (comment: string) => void;
+}) {
+  const comments = maintenanceComments[issueType][mode];
+  if (!comments.length) return null;
+  return (
+    <div className="maintenance-quick-comments" role="group" aria-label={`Quick comments for ${issueTypeLabels[issueType]}`}>
+      <p className="arrival-hint">{mode === 'report' ? 'Choose a comment that matches the problem, then edit if needed.' : 'Choose only work that was completed, then edit if needed.'}</p>
+      <div className="maintenance-comment-options">
+        {comments.map(comment => <button key={comment} className="button button-secondary maintenance-comment-option" type="button" onClick={() => onChoose(comment)}>{comment}</button>)}
+      </div>
+    </div>
+  );
+}
 
 export function MaintenanceWorkspace({ issues, rooms, canReport, canResolve }: MaintenanceWorkspaceProps) {
   const [selected, setSelected] = useState<MaintenanceIssue | null>(null);
@@ -86,10 +104,25 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
   const [roomId, setRoomId] = useState('');
   const [issueType, setIssueType] = useState<MaintenanceIssueType>('air_conditioning');
   const [detail, setDetail] = useState('');
+  const [suggestedDetail, setSuggestedDetail] = useState<string | null>(null);
+  const [reviewDetail, setReviewDetail] = useState(false);
+  const detailField = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState<string | null>(null);
   const showSuccess = useSuccessBanner();
   const [pending, startTransition] = useTransition();
   const canSubmit = roomId !== '' && (issueType !== 'other' || detail.trim() !== '') && !pending;
+
+  function changeIssueType(nextType: MaintenanceIssueType) {
+    if (nextType === issueType) return;
+    if (suggestedDetail !== null && detail === suggestedDetail) {
+      setDetail('');
+      setReviewDetail(false);
+    } else {
+      setReviewDetail(detail.trim() !== '');
+    }
+    setSuggestedDetail(null);
+    setIssueType(nextType);
+  }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,6 +137,8 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
           setRoomId('');
           setIssueType('air_conditioning');
           setDetail('');
+          setSuggestedDetail(null);
+          setReviewDetail(false);
         } else {
           setError(result.error ?? 'The maintenance issue could not be reported.');
         }
@@ -129,14 +164,17 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
       </label>
       <label className="inventory-field">
         <span>Issue type</span>
-        <select value={issueType} onChange={(event) => setIssueType(event.target.value as MaintenanceIssueType)}>
+        <select value={issueType} onChange={(event) => changeIssueType(event.target.value as MaintenanceIssueType)}>
           {Object.entries(issueTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </label>
       <label className="inventory-field">
         <span>{issueType === 'other' ? 'Detail' : 'Detail (optional)'}</span>
-        <textarea value={detail} onChange={(event) => setDetail(event.target.value)} rows={4} maxLength={250} required={issueType === 'other'} />
+        <textarea ref={detailField} value={detail} onChange={(event) => { setDetail(event.target.value); setSuggestedDetail(null); setReviewDetail(false); }} rows={4} maxLength={250} required={issueType === 'other'} />
       </label>
+      {reviewDetail ? <p className="arrival-hint" role="status">Your comment was kept. Check that it matches {issueTypeLabels[issueType].toLowerCase()}.</p> : null}
+      {!detail.trim() ? <QuickComments issueType={issueType} mode="report" onChoose={(comment) => { setDetail(comment); setSuggestedDetail(comment); setReviewDetail(false); detailField.current?.focus(); }} /> : null}
+      {issueType === 'other' ? <p className="arrival-hint">Describe what is faulty and where.</p> : null}
       <p className="arrival-hint">Reporting maintenance blocks new assignment only. It does not end an occupied stay or replace an inspection.</p>
       <button className="button button-primary" type="submit" disabled={!canSubmit}>{pending ? 'Reporting…' : 'Report issue'}</button>
       </fieldset>
@@ -147,6 +185,7 @@ function ReportIssueForm({ rooms }: { rooms: MaintenanceRoom[] }) {
 function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClose: () => void }) {
   const showSuccess = useSuccessBanner();
   const [resolutionDetail, setResolutionDetail] = useState('');
+  const resolutionField = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [alreadyResolved, setAlreadyResolved] = useState<{ resolvedBy: string; resolvedAt: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -182,10 +221,12 @@ function ResolveIssueDialog({ issue, onClose }: { issue: MaintenanceIssue; onClo
         ) : null}
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <p className="dialog-note">This resolves only this issue. Other open issues keep {issue.roomNumber} blocked, and this does not approve room cleanliness.</p>
+        <p className="dialog-note"><strong>{issueTypeLabels[issue.issueType]}:</strong> {issue.detail || 'No additional detail recorded.'}</p>
         <label className="inventory-field">
           <span>Resolution detail</span>
-          <textarea value={resolutionDetail} onChange={(event) => setResolutionDetail(event.target.value)} rows={4} maxLength={250} required />
+          <textarea ref={resolutionField} value={resolutionDetail} onChange={(event) => setResolutionDetail(event.target.value)} rows={4} maxLength={250} required disabled={Boolean(alreadyResolved)} />
         </label>
+        {!alreadyResolved && !resolutionDetail.trim() ? <QuickComments issueType={issue.issueType} mode="resolution" onChoose={(comment) => { setResolutionDetail(comment); resolutionField.current?.focus(); }} /> : null}
     </TaskSheet>
   );
 }

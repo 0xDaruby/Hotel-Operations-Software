@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import type { MaintenanceIssueType } from './maintenance';
+import { maintenanceReportInput, maintenanceResolutionInput } from '@/lib/operation-input';
 
 export type MaintenanceActionResult = {
   ok: boolean;
@@ -23,11 +23,10 @@ function revalidateMaintenanceViews() {
   revalidatePath('/departure-due');
 }
 
-export async function reportMaintenanceIssueAction(input: {
-  roomId: string;
-  issueType: MaintenanceIssueType;
-  detail: string;
-}): Promise<MaintenanceActionResult> {
+export async function reportMaintenanceIssueAction(value: unknown): Promise<MaintenanceActionResult> {
+  const parsed = maintenanceReportInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Choose a valid room and issue type. Keep details to 250 characters and describe other issues.' };
+  const input = parsed.data;
   const supabase = await createClient();
   const { error } = await supabase.rpc('report_maintenance_issue', {
     p_room_id: input.roomId,
@@ -40,11 +39,10 @@ export async function reportMaintenanceIssueAction(input: {
   return { ok: true };
 }
 
-export async function resolveMaintenanceIssueAction(input: {
-  issueId: string;
-  resolutionDetail: string;
-  expectedVersion: number;
-}): Promise<MaintenanceActionResult> {
+export async function resolveMaintenanceIssueAction(value: unknown): Promise<MaintenanceActionResult> {
+  const parsed = maintenanceResolutionInput.safeParse(value);
+  if (!parsed.success) return { ok: false, error: 'Select a valid issue and describe the resolution in 1–250 characters.' };
+  const input = parsed.data;
   const supabase = await createClient();
   const { error } = await supabase.rpc('resolve_maintenance_issue', {
     p_issue_id: input.issueId,

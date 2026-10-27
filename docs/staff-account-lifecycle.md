@@ -17,9 +17,9 @@ In this hotel's Supabase **Authentication > Email Templates**, apply:
 The hosted dashboard currently requires either custom SMTP or a Pro plan to edit template subjects/bodies. This project's custom SMTP switch was inspected and is disabled. Do not claim that repository templates were applied while this restriction remains. New accounts can use Supabase's standard invitation without custom SMTP; confirmed-but-unfinished retries retain the default recovery wording until the template can be configured. Do not enable SMTP until working provider credentials and a verified sender are available, or upgrade the plan without the user's authorization.
 
 - **Invite user** subject: `You're invited to your hotel workspace`; body: `supabase/templates/staff-invite.html`.
-- **Reset password** subject: `Complete your staff account setup`; body: `supabase/templates/staff-setup-retry.html`.
+- **Reset password** subject: `Choose your Hotel Operations password`; body: `supabase/templates/staff-setup-retry.html`.
 
-The application currently uses recovery emails only for manager-authorized pending staff setup. If a separate forgotten-password feature is added, give recovery emails neutral password-management wording or a dedicated delivery path before enabling it.
+Recovery emails serve both confirmed-but-unfinished staff setup retries and self-service forgotten passwords. Keep their wording neutral so an email requested by a staff member does not claim to have been sent by their manager. The prepared retry template above covers both cases. Hosted default wording remains in use until a sending provider or eligible plan permits customization.
 
 In **URL Configuration**, set the production Site URL to `https://hotel-operations-software.netlify.app` and allow `https://hotel-operations-software.netlify.app/auth/confirm?next=/set-password`. Keep `WEB_ORIGIN` on Netlify equal to the production origin. The application fixes the post-verification destination to `/set-password` and does not trust a link's `next` query for navigation.
 

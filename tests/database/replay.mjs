@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { verifySerializationContract, verifyPilotLifecycle } from './pilot-lifecycle.mjs';
 import { verifyOwnerStatistics } from './owner-statistics.mjs';
 import { verifyStaffLifecycle } from './staff-lifecycle.mjs';
+import { verifyPasswordRecovery } from './password-recovery.mjs';
 import { verifyLocalRecovery } from './recovery.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -21,9 +22,10 @@ try {
     CREATE ROLE authenticated;
     CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA auth;
-    CREATE TABLE auth.users (id uuid PRIMARY KEY, email text, raw_app_meta_data jsonb DEFAULT '{}', created_at timestamptz DEFAULT now());
+    CREATE TABLE auth.users (id uuid PRIMARY KEY, email text, raw_app_meta_data jsonb DEFAULT '{}', created_at timestamptz DEFAULT now(), recovery_sent_at timestamptz);
     CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,created_at timestamptz DEFAULT now());
     CREATE TABLE auth.refresh_tokens(user_id varchar,session_id uuid,revoked boolean DEFAULT false);
+    CREATE TABLE auth.mfa_amr_claims(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),session_id uuid NOT NULL REFERENCES auth.sessions(id) ON DELETE CASCADE,authentication_method text NOT NULL,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
       $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     GRANT USAGE ON SCHEMA public, auth TO authenticated, service_role;
@@ -144,6 +146,7 @@ try {
     VALUES ('30000000-0000-0000-0000-000000000099','10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','102');`);
   await verifyLocalRecovery(db, PGlite);
   await verifyStaffLifecycle(db);
+  await verifyPasswordRecovery(db);
   const job = (await db.query("SELECT schedule,command FROM cron.job WHERE jobname='daily-inspections'")).rows;
   assert.equal(job.length, 1);
   assert.equal(job[0].schedule, '0 7 * * *');

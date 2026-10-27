@@ -79,6 +79,11 @@
       "id": "0014",
       "file": "supabase/migrations/0014_staff_account_lifecycle.sql",
       "sha256": "7cc0ef349206b3a7684d4c57b17b012adacd9b4642c011d8be576cb8540241fa"
+    },
+    {
+      "id": "0015",
+      "file": "supabase/migrations/0015_password_recovery.sql",
+      "sha256": "ad2c90a593d63c228eab41dbe3d7e1a39fd55b7047eb98b0e15a1773de4f4dae"
     }
   ]
 }

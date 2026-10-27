@@ -6,6 +6,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { hasStaffSetupResponse } from './setup-link';
 import { setRememberBrowserSession } from '@/lib/supabase/browser-persistence';
+import Link from 'next/link';
+import { authRateLimited, normalizeAuthEmail, validLoginPassword } from './auth-input';
 
 const reasonMessages: Record<string, string> = {
   inactive: 'This staff account is inactive. Ask the Owner / Manager for access.',
@@ -14,7 +16,8 @@ const reasonMessages: Record<string, string> = {
   'signed-out': 'Your session has ended. Please sign in again.',
   missing: 'Your sign-in is valid, but no staff profile is linked to it yet.',
   'invalid-role': 'This account does not have a supported hotel role.',
-  'setup-link': 'This setup link is invalid or expired. Ask the Owner / Manager to send a new setup email.',
+  'setup-link': 'This email link is invalid or expired. Use Forgot password, or ask the Owner / Manager to resend your setup email.',
+  'password-reset': 'Your password was reset. Sign in with your new password.',
 };
 
 type LoginFormProps = {
@@ -47,12 +50,18 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
     setIsPasswordVisible(false);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get('email') ?? '').trim();
-    const password = String(formData.get('password') ?? '');
+    const email = normalizeAuthEmail(formData.get('email'));
+    const password = formData.get('password');
+    if (!email || !validLoginPassword(password)) {
+      setError('Enter a valid email address and password.'); setIsSubmitting(false); return;
+    }
     try {
       setRememberBrowserSession(rememberMe);
       const { error: signInError } = await createClient().auth.signInWithPassword({ email, password });
       if (signInError) {
+        if (authRateLimited(signInError)) {
+          setError('Too many sign-in attempts. Wait a few minutes before trying again.'); setIsSubmitting(false); return;
+        }
         setError('We could not sign you in. Check your email and password. New staff must open their setup email and choose a password first.');
         setIsSubmitting(false);
         return;
@@ -74,6 +83,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
           disabled={isSubmitting}
           inputMode="email"
           name="email"
+          maxLength={254}
           placeholder="name@hotel.com"
           required
           type="email"
@@ -86,7 +96,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
             autoComplete="current-password"
             disabled={isSubmitting}
             id="password"
-            minLength={8}
+            maxLength={1024}
             name="password"
             required
             type={isPasswordVisible ? 'text' : 'password'}
@@ -106,6 +116,7 @@ export function LoginForm({ nextPath, reason }: LoginFormProps) {
           </button>
         </div>
       </div>
+      <Link className="auth-back-link" href="/forgot-password">Forgot password?</Link>
       <div className="login-remember">
         <label><input type="checkbox" name="rememberMe" checked={rememberMe}
           onChange={event => setRememberMe(event.target.checked)} disabled={isSubmitting}

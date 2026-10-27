@@ -4,9 +4,9 @@ import { useId, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Circle } from 'lucide-react';
 import { PasswordInput } from '@/components/ui/password-input';
-import { finishPasswordSetupAction } from './password-setup-actions';
+import { finishPasswordSetupAction, finishPasswordRecoveryAction } from './password-setup-actions';
 
-export function PasswordSetupForm() {
+export function PasswordSetupForm({ mode = 'setup' }: { mode?: 'setup' | 'recovery' }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -30,12 +30,13 @@ export function PasswordSetupForm() {
     setPending(true);
     setError('');
     try {
-      const result = await finishPasswordSetupAction(String(fields.get('password') ?? ''), String(fields.get('confirmation') ?? ''));
+      const finish = mode === 'recovery' ? finishPasswordRecoveryAction : finishPasswordSetupAction;
+      const result = await finish(String(fields.get('password') ?? ''), String(fields.get('confirmation') ?? ''));
       if (!result.ok) { setError(result.error ?? 'Staff setup could not be completed.'); return; }
-      router.replace('/');
+      router.replace(mode === 'recovery' ? '/login?reason=password-reset' : '/');
       router.refresh();
     } catch {
-      setError('Staff setup could not be completed. Try again.');
+      setError(mode === 'recovery' ? 'Password recovery could not finish. Request a new reset link or try again.' : 'Staff setup could not be completed. Try again.');
     } finally { setPending(false); }
   }
   return <form className="login-form password-setup-form" onSubmit={submit}>
@@ -67,6 +68,7 @@ export function PasswordSetupForm() {
       <p id={`${id}-help`}>Choose a password you use only for this account. A longer passphrase can be easier to remember.</p>
     </div>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
-    <button className="button button-primary" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Set password and continue'}</button>
+    {error && mode === 'recovery' ? <a className="auth-back-link" href="/forgot-password">Request a new link</a> : null}
+    <button className="button button-primary" type="submit" disabled={pending}>{pending ? 'Saving…' : mode === 'recovery' ? 'Reset password and sign in' : 'Set password and continue'}</button>
   </form>;
 }

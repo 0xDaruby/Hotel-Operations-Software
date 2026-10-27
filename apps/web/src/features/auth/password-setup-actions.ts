@@ -3,6 +3,34 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { completePasswordSetup, validateSetupPassword } from './password-setup';
+import { completePasswordRecovery } from './password-recovery';
+
+export async function finishPasswordRecoveryAction(password: unknown, confirmation: unknown) {
+  const validation = validateSetupPassword(password, confirmation);
+  if (validation) return { ok: false, error: validation };
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return { ok: false, error: 'Open a new password-reset link to continue.' };
+  // Check privileged configuration before consuming the one-use reset session.
+  let admin: ReturnType<typeof createAdminClient>;
+  try { admin = createAdminClient(); }
+  catch { return { ok: false, error: 'Password recovery is temporarily unavailable.' }; }
+  return completePasswordRecovery({
+    claim: async () => {
+      const claim = await supabase.rpc('claim_password_recovery');
+      if (claim.error || typeof claim.data !== 'string') throw Error('Recovery denied');
+      return claim.data;
+    },
+    update: async () => {
+      const result = await supabase.auth.updateUser({ password: password as string });
+      return !result.error;
+    },
+    finish: async (sessionId, saved) => {
+      const result = await admin.rpc('finish_password_recovery', { p_user_id: data.user.id, p_session_id: sessionId, p_password_saved: saved });
+      if (result.error) throw Error('Recovery cleanup failed');
+    },
+  });
+}
 
 export async function finishPasswordSetupAction(password: string, confirmation: string) {
   const validation = validateSetupPassword(password, confirmation);

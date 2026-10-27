@@ -1,12 +1,9 @@
 import { LoginForm } from '@/features/auth/login-form';
+import { safeNextPath } from '@/features/auth/safe-next-path';
 
 type LoginPageProps = {
   searchParams: Promise<{ next?: string; reason?: string }>;
 };
-
-function safeNextPath(value?: string) {
-  return value?.startsWith('/') && !value.startsWith('//') ? value : '/overview';
-}
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
